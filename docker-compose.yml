@@ -1,0 +1,16 @@
+version: '3'
+
+services:
+  ai-chatbot:
+    build: .
+    env_file:
+      - .env
+    ports:
+      - "3003:3003"
+    restart: unless-stopped
+    networks:
+      - tools_default
+
+networks:
+  tools_default:
+    external: true

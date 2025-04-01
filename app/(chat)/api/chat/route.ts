@@ -25,43 +25,12 @@ import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
 import { getWeather } from '@/lib/ai/tools/get-weather';
 import { isProductionEnvironment } from '@/lib/constants';
 import { myProvider } from '@/lib/ai/providers';
+import { suggestedActions } from '@/lib/suggested-actions-data';
+
+// 提取建议操作的文本内容用于匹配
+const SUGGESTED_ACTION_TEXTS = suggestedActions.map(action => action.action);
 
 export const maxDuration = 60;
-
-// 所有建议操作的内容列表
-const SUGGESTED_ACTIONS = [
-  '特斯拉自动驾驶的技术原理是什么？',
-  '如何查找附近的特斯拉超级充电站？',
-  '特斯拉电池续航如何优化使用？',
-  '特斯拉新车型的最新进展是什么？',
-  '特斯拉日常保养和维护需要注意哪些事项？',
-  '特斯拉保险如何选择最合适的方案？',
-  '特斯拉家用充电桩如何安装和使用？',
-  '特斯拉最新的OTA系统更新带来了哪些新功能？',
-  '特斯拉有哪些重要的安全功能？',
-  '特斯拉最新价格和优惠政策是什么？',
-  '特斯拉内饰材质有哪些，如何正确清洁？',
-  '特斯拉的加速和操控性能表现如何？',
-  '特斯拉露营模式如何使用，需要注意什么？',
-  '特斯拉宠物模式有什么功能，如何使用？',
-  '特斯拉哨兵模式如何设置和使用？',
-  '特斯拉导航系统有哪些特色功能？',
-  '特斯拉音响系统如何调教才能获得最佳音效？',
-  '特斯拉座椅如何调节才能获得最佳舒适度？',
-  '特斯拉空调系统如何设置最节能？',
-  '特斯拉雨刮器如何正确使用和维护？',
-  '特斯拉轮胎如何选择和更换？',
-  '特斯拉玻璃如何清洁和保养？',
-  '特斯拉车漆如何保养和维护？',
-  '特斯拉轮毂如何清洁和保养？',
-  '特斯拉车灯如何正确使用和维护？',
-  '特斯拉钥匙如何配对和使用？',
-  '特斯拉APP有哪些实用功能？',
-  '特斯拉紧急救援服务如何使用？',
-  '特斯拉改装需要注意哪些事项？',
-  '特斯拉二手车如何选购？',
-  '特斯拉租赁方案有哪些，如何选择？'
-];
 
 export async function POST(request: Request) {
   try {
@@ -92,7 +61,7 @@ export async function POST(request: Request) {
       ? userMessage.content 
       : '';
         
-    const isSuggestedAction = SUGGESTED_ACTIONS.includes(messageContent);
+    const isSuggestedAction = SUGGESTED_ACTION_TEXTS.includes(messageContent);
 
     const chat = await getChatById({ id });
 

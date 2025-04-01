@@ -58,6 +58,7 @@ export const {
         });
 
         const data = await response.json();
+
         if (!data.data?.loginBySms?.sessionToken) {
           return null;
         }
@@ -68,6 +69,7 @@ export const {
         const lcSessionToken = data.data.loginBySms.sessionToken;
 
         const { user } = await createOrUpdateUserByLcUserId(lcUserId, avatarUrl, nickname, lcSessionToken);
+
         return {
           id: user?.id,
           name: user?.nickname,
@@ -77,6 +79,26 @@ export const {
       },
     }),
   ],
+  secret: process.env.AUTH_SECRET,
+  debug: true,
+  pages: {
+    signIn: '/',
+  },
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
+  cookies: {
+    sessionToken: {
+      name: `next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: false,
+      },
+    },
+  },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {

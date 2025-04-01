@@ -43,6 +43,7 @@ export async function myProvider() {
       }),
       'title-model': defaultQwenProvider('qwen-turbo'),
       'artifact-model': defaultQwenProvider('qwen-turbo'),
+      'suggested-model': defaultQwenProvider('qwen-plus'),
     },
   });
 }

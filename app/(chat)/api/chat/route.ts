@@ -82,7 +82,7 @@ export async function POST(request: Request) {
     return createDataStreamResponse({
       execute: async (dataStream) => {
         const result = streamText({
-          model: (await myProvider()).languageModel(selectedChatModel),
+          model: (await myProvider()).languageModel("suggested-model"),
           system: systemPrompt({ selectedChatModel }),
           messages,
           maxSteps: 5,

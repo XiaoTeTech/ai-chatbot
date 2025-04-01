@@ -13,9 +13,10 @@ interface SuggestedActionsProps {
   append: UseChatHelpers['append'];
 }
 
-function PureSuggestedActions({ chatId, append }: SuggestedActionsProps) {
+function PureSuggestedActions({ append, chatId }: SuggestedActionsProps) {
   const { data: session } = useSession();
   const { open } = useLoginDialog();
+  const [displayedActions, setDisplayedActions] = useState<typeof suggestedActions>([]);
 
   const suggestedActions = [
     {
@@ -175,16 +176,16 @@ function PureSuggestedActions({ chatId, append }: SuggestedActionsProps) {
     }
   ];
 
-  // 随机选择4个问题
-  const getRandomActions = () => {
-    const shuffled = [...suggestedActions].sort(() => 0.5 - Math.random());
-    return shuffled.slice(0, 4);
-  };
-
-  const [displayedActions, setDisplayedActions] = useState(getRandomActions());
-
-  // 每5分钟随机更新一次问题
   useEffect(() => {
+    // 只在客户端执行随机选择
+    const getRandomActions = () => {
+      const shuffled = [...suggestedActions].sort(() => Math.random() - 0.5);
+      return shuffled.slice(0, 4);
+    };
+
+    setDisplayedActions(getRandomActions());
+
+    // 每5分钟更新一次显示的问题
     const interval = setInterval(() => {
       setDisplayedActions(getRandomActions());
     }, 5 * 60 * 1000);
@@ -211,23 +212,23 @@ function PureSuggestedActions({ chatId, append }: SuggestedActionsProps) {
         data-testid="suggested-actions"
         className="grid sm:grid-cols-2 gap-2 w-full"
       >
-        {displayedActions.map((suggestedAction, index) => (
+        {displayedActions.map((action, index) => (
           <motion.div
+            key={action.title}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
             transition={{ delay: 0.05 * index }}
-            key={`suggested-action-${suggestedAction.title}-${index}`}
             className={index > 1 ? 'hidden sm:block' : 'block'}
           >
             <Button
               variant="ghost"
-              onClick={() => handleActionClick(suggestedAction.action)}
+              onClick={() => handleActionClick(action.action)}
               className="text-left border rounded-xl px-4 py-3.5 text-sm flex-1 gap-1 sm:flex-col w-full h-auto justify-start items-start"
             >
-              <span className="font-medium">{suggestedAction.title}</span>
+              <span className="font-medium">{action.title}</span>
               <span className="text-muted-foreground">
-                {suggestedAction.label}
+                {action.label}
               </span>
             </Button>
           </motion.div>
@@ -238,4 +239,4 @@ function PureSuggestedActions({ chatId, append }: SuggestedActionsProps) {
   );
 }
 
-export const SuggestedActions = memo(PureSuggestedActions, () => true);
+export const SuggestedActions = memo(PureSuggestedActions);

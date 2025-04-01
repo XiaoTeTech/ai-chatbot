@@ -57,6 +57,7 @@ export async function POST(request: Request) {
     }
 
     // 检查最新的用户消息是否匹配建议操作列表
+    console.log(userMessage.content)
     const messageContent = typeof userMessage.content === 'string' 
       ? userMessage.content 
       : '';
@@ -89,12 +90,13 @@ export async function POST(request: Request) {
         },
       ],
     });
-
+    const model =   (await myProvider()).languageModel(isSuggestedAction ? "suggested-model" : selectedChatModel);
+    console.log(model)
     return createDataStreamResponse({
       execute: async (dataStream) => {
         const result = streamText({
           // 如果是建议操作，使用 suggest-model，否则使用用户选择的模型
-          model: (await myProvider()).languageModel(isSuggestedAction ? "suggested-model" : selectedChatModel),
+          model: model,
           system: systemPrompt({ selectedChatModel }),
           messages,
           maxSteps: 5,

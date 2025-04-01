@@ -100,7 +100,6 @@ export async function POST(request: Request) {
     return createDataStreamResponse({
       execute: async (dataStream) => {
         const result = streamText({
-          // 如果是建议操作，使用 suggest-model，否则使用用户选择的模型
           model: model,
           system: systemPrompt({ selectedChatModel }),
           messages,

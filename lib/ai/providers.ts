@@ -5,8 +5,8 @@ import {
 } from 'ai';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { auth } from "@/app/(auth)/auth";
-import { cache } from 'react'; // 引入 React 的 cache 工具（适用于 Next.js）
 import type { ExtendedUser } from '@/app/(auth)/auth';
+import { cache } from 'react';
 
 const getAuthSession = cache(async () => {
   const session = await auth();

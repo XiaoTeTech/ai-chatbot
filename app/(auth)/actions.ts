@@ -85,10 +85,6 @@ export const sendVerificationCode = async (
     });
 
     if (!response.ok) {
-       console.error(`[SERVER ACTION - sendCode] External API request failed with status: ${response.status}`);
-       // 可以尝试读取 response.text() 来获取更多错误信息
-       // const errorText = await response.text();
-       // console.error(`[SERVER ACTION - sendCode] External API error response body: ${errorText}`);
        return { status: 'failed' };
     }
 

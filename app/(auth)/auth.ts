@@ -34,9 +34,7 @@ export const {
         code: { label: "Code", type: "text" }
       },
       async authorize(credentials): Promise<ExtendedUser | null> {
-        console.log('=== 开始认证流程 ===');
         const { phone, code } = credentials as { phone: string, code: string };
-        console.log('收到认证请求:', { phone });
 
         try {
           const response = await fetch('https://lcen.xiaote.net/api/graphql/', {
@@ -61,10 +59,8 @@ export const {
           });
 
           const data = await response.json();
-          console.log('认证响应:', data);
 
           if (!data.data?.loginBySms?.sessionToken) {
-            console.log('认证失败: 未获取到 sessionToken');
             return null;
           }
 
@@ -83,10 +79,8 @@ export const {
             image: user?.avatarUrl,
             lcSessionToken: user?.lcSessionToken
           };
-          console.log('返回用户数据:', userData);
           return userData;
         } catch (error) {
-          console.error('认证过程出错:', error);
           return null;
         }
       },
@@ -114,10 +108,6 @@ export const {
   },
   callbacks: {
     async jwt({ token, user }) {
-      console.log('=== JWT Callback ===');
-      console.log('Token:', token);
-      console.log('User:', user);
-      
       if (user) {
         const extendedUser = user as ExtendedUser;
         token.id = extendedUser.id;
@@ -127,21 +117,15 @@ export const {
         }
         token.picture = extendedUser.image;
       }
-      console.log('返回的 Token:', token);
       return token as ExtendedToken;
     },
     async session({ session, token }: { session: ExtendedSession; token: ExtendedToken }) {
-      console.log('=== Session Callback ===');
-      console.log('Session:', session);
-      console.log('Token:', token);
-      
       if (session.user){
         session.user.id = token.id;
         if (token.lcSessionToken){
           session.user.lcSessionToken = token.lcSessionToken;
         }
       }
-      console.log('返回的 Session:', session);
       return session;
     },
   },

@@ -194,7 +194,7 @@ export const textArtifact = new Artifact<'text', TextArtifactMetadata>({
       // 笔图标
       icon: <PenIcon />,
       // 操作描述：进行最终润色
-      description: '进行最终润色',
+      description: '润色一下',
       // 点击事件处理函数
       onClick: ({ appendMessage }) => {
         appendMessage({
@@ -208,7 +208,7 @@ export const textArtifact = new Artifact<'text', TextArtifactMetadata>({
       // 消息图标
       icon: <MessageIcon />,
       // 操作描述：请求建议
-      description: '请求建议',
+      description: '给点建议',
       // 点击事件处理函数
       onClick: ({ appendMessage }) => {
         appendMessage({

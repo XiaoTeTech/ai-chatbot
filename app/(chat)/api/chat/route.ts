@@ -113,6 +113,7 @@ export async function POST(request: Request) {
                   'updateDocument',
                   'requestSuggestions',
                 ],
+          experimental_generateMessageId: generateUUID,
           tools: {
             getWeather,
             createDocument: createDocument({ session, dataStream }),

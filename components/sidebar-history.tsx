@@ -332,7 +332,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                     {groupedChats.lastWeek.length > 0 && (
                       <>
                         <div className="px-2 py-1 text-xs text-sidebar-foreground/50 mt-6">
-                          Last 7 days
+                          最近7天
                         </div>
                         {groupedChats.lastWeek.map((chat) => (
                           <ChatItem
@@ -372,7 +372,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                     {groupedChats.older.length > 0 && (
                       <>
                         <div className="px-2 py-1 text-xs text-sidebar-foreground/50 mt-6">
-                          Older
+                          更早
                         </div>
                         {groupedChats.older.map((chat) => (
                           <ChatItem

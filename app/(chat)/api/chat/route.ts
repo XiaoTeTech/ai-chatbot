@@ -62,11 +62,7 @@ export async function POST(request: Request) {
       ? userMessage.content 
       : '';
         
-    console.log(SUGGESTED_ACTION_TEXTS)
     const isSuggestedAction = SUGGESTED_ACTION_TEXTS.includes(messageContent);
-    console.log(messageContent)
-    console.log(isSuggestedAction)
-
     const chat = await getChatById({ id });
 
     if (!chat) {
@@ -94,9 +90,7 @@ export async function POST(request: Request) {
       ],
     });
     const modelName = isSuggestedAction ? "suggested-model" : selectedChatModel;
-    console.log(modelName)
     const model = (await myProvider()).languageModel(modelName);
-    console.log(model)
     return createDataStreamResponse({
       execute: async (dataStream) => {
         const result = streamText({

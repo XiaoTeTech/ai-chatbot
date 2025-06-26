@@ -15,12 +15,13 @@ import {
   vote,
   type DBMessage,
 } from './schema';
-import { ArtifactKind } from '@/components/artifact';
+import type { ArtifactKind } from '@/components/artifact';
 
 // Optionally, if not using email/pass login, you can
 // use the Drizzle adapter for Auth.js / NextAuth
 // https://authjs.dev/reference/adapter/drizzle
 
+// biome-ignore lint/style/noNonNullAssertion: <explanation>
 const client = postgres(process.env.POSTGRES_URL!);
 
 const db = drizzle(client);

@@ -48,7 +48,7 @@ function transformMessageRole(
 // 将外部API的聊天历史转换为本地DBMessage类型
 export function transformChatHistoryToDBMessage(
   history: ChatHistoryResponse,
-): DBMessage {
+): DBMessage & { vote_status?: string | null } {
   // 将消息内容转换为parts格式
   const parts = [
     {
@@ -64,6 +64,7 @@ export function transformChatHistoryToDBMessage(
     parts: parts,
     attachments: [], // 外部API暂时不支持附件
     createdAt: new Date(history.timestamp * 1000),
+    vote_status: history.vote_status, // 添加投票状态
   };
 }
 
@@ -122,7 +123,9 @@ export function transformChatHistoryToDBMessages(
 }
 
 // 将DBMessage转换为UIMessage（用于前端显示）
-export function transformDBMessageToUIMessage(dbMessage: DBMessage): UIMessage {
+export function transformDBMessageToUIMessage(
+  dbMessage: DBMessage & { vote_status?: string | null },
+): UIMessage & { vote_status?: string | null } {
   let content = '';
   if (Array.isArray(dbMessage.parts)) {
     content = dbMessage.parts
@@ -139,6 +142,7 @@ export function transformDBMessageToUIMessage(dbMessage: DBMessage): UIMessage {
     createdAt: dbMessage.createdAt,
     experimental_attachments:
       (dbMessage.attachments as Array<Attachment>) ?? [],
+    vote_status: dbMessage.vote_status, // 添加投票状态
   };
 }
 

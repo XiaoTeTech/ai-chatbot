@@ -119,17 +119,7 @@ export async function POST(request: Request) {
                         '🆔 Real conversation ID:',
                         realConversationId,
                       );
-
-                      // 立即发送 conversation_id 数据
-                      const conversationData = {
-                        type: 'conversation_id',
-                        content: realConversationId,
-                      };
-                      controller.enqueue(
-                        encoder.encode(
-                          `2:${JSON.stringify(conversationData)}\n`,
-                        ),
-                      );
+                      // TODO: 找到正确的方式来传递 conversation_id 给前端
                     }
 
                     // 提取消息内容

@@ -397,7 +397,7 @@ export function Chat({
   selectedVisibilityType,
   isReadonly,
 }: ChatProps) {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const { open: openLoginDialog } = useLoginDialog();
   const router = useRouter();
   const { mutate } = useSWRConfig();
@@ -420,6 +420,7 @@ export function Chat({
   // 处理建议点击 - 直接发送消息
   const handleSuggestionClick = async (suggestion: string) => {
     console.log('🔍 建议点击检查:', {
+      status,
       hasSession: !!session,
       hasUser: !!session?.user,
       userInfo: session?.user
@@ -427,17 +428,18 @@ export function Chat({
         : null,
     });
 
-    // 如果没有 session，稍微等待一下再检查（处理登录后的状态同步延迟）
-    if (!session?.user) {
-      console.log('⏳ 第一次检查没有 session，等待 100ms 后重试...');
-      await new Promise((resolve) => setTimeout(resolve, 100));
+    // 如果 session 还在加载中，等待加载完成
+    if (status === 'loading') {
+      console.log('⏳ Session 正在加载中，等待...');
+      toast.info('正在验证登录状态，请稍候...');
+      return;
+    }
 
-      // 重新检查 session 状态
-      if (!session?.user) {
-        console.log('❌ 重试后仍然没有 session 或 user，打开登录对话框');
-        openLoginDialog();
-        return;
-      }
+    // 如果没有 session，打开登录对话框
+    if (status === 'unauthenticated' || !session?.user) {
+      console.log('❌ 用户未登录，打开登录对话框');
+      openLoginDialog();
+      return;
     }
 
     console.log('✅ Session 验证通过，发送消息');
@@ -491,25 +493,43 @@ export function Chat({
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
+      let accumulatedContent = '';
+      let lastUpdateTime = Date.now();
 
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
+        if (done) {
+          // 最后一次更新，确保所有内容都显示
+          setMessages((prev) => {
+            const newMessages = [...prev];
+            const lastMessage = newMessages[newMessages.length - 1];
+            if (lastMessage.role === 'assistant') {
+              lastMessage.content = accumulatedContent;
+            }
+            return newMessages;
+          });
+          break;
+        }
 
         const chunk = decoder.decode(value, { stream: true });
+        accumulatedContent += chunk;
 
-        // 更新助手消息内容 - 添加打字效果
-        setMessages((prev) => {
-          const newMessages = [...prev];
-          const lastMessage = newMessages[newMessages.length - 1];
-          if (lastMessage.role === 'assistant') {
-            lastMessage.content += chunk;
-          }
-          return newMessages;
-        });
+        // 限制更新频率：每50ms或每10个字符更新一次
+        const now = Date.now();
+        if (now - lastUpdateTime > 50 || chunk.length >= 10) {
+          setMessages((prev) => {
+            const newMessages = [...prev];
+            const lastMessage = newMessages[newMessages.length - 1];
+            if (lastMessage.role === 'assistant') {
+              lastMessage.content = accumulatedContent;
+            }
+            return newMessages;
+          });
+          lastUpdateTime = now;
 
-        // 添加小延迟以产生打字效果
-        await new Promise((resolve) => setTimeout(resolve, 10));
+          // 添加小延迟以产生打字效果
+          await new Promise((resolve) => setTimeout(resolve, 10));
+        }
       }
 
       // 检查是否需要跳转到新的 conversation_id
@@ -549,7 +569,22 @@ export function Chat({
 
   // 处理点赞/踩
   const handleVote = async (messageId: string, voteType: 'up' | 'down') => {
-    if (!session?.user) {
+    console.log('🔍 投票检查:', {
+      status,
+      hasSession: !!session,
+      hasUser: !!session?.user,
+    });
+
+    // 如果 session 还在加载中，等待加载完成
+    if (status === 'loading') {
+      console.log('⏳ Session 正在加载中，等待...');
+      toast.info('正在验证登录状态，请稍候...');
+      return;
+    }
+
+    // 如果没有 session，打开登录对话框
+    if (status === 'unauthenticated' || !session?.user) {
+      console.log('❌ 用户未登录，打开登录对话框');
       openLoginDialog();
       return;
     }
@@ -686,25 +721,43 @@ export function Chat({
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
+      let accumulatedContent = '';
+      let lastUpdateTime = Date.now();
 
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
+        if (done) {
+          // 最后一次更新，确保所有内容都显示
+          setMessages((prev) => {
+            const newMessages = [...prev];
+            const lastMessage = newMessages[newMessages.length - 1];
+            if (lastMessage.role === 'assistant') {
+              lastMessage.content = accumulatedContent;
+            }
+            return newMessages;
+          });
+          break;
+        }
 
         const chunk = decoder.decode(value, { stream: true });
+        accumulatedContent += chunk;
 
-        // 更新助手消息内容 - 添加打字效果
-        setMessages((prev) => {
-          const newMessages = [...prev];
-          const lastMessage = newMessages[newMessages.length - 1];
-          if (lastMessage.role === 'assistant') {
-            lastMessage.content += chunk;
-          }
-          return newMessages;
-        });
+        // 限制更新频率：每50ms或每10个字符更新一次
+        const now = Date.now();
+        if (now - lastUpdateTime > 50 || chunk.length >= 10) {
+          setMessages((prev) => {
+            const newMessages = [...prev];
+            const lastMessage = newMessages[newMessages.length - 1];
+            if (lastMessage.role === 'assistant') {
+              lastMessage.content = accumulatedContent;
+            }
+            return newMessages;
+          });
+          lastUpdateTime = now;
 
-        // 添加小延迟以产生打字效果
-        await new Promise((resolve) => setTimeout(resolve, 10));
+          // 添加小延迟以产生打字效果
+          await new Promise((resolve) => setTimeout(resolve, 10));
+        }
       }
 
       // 检查是否需要跳转到新的 conversation_id

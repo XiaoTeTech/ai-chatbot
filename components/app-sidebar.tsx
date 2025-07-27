@@ -75,7 +75,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
         {config?.store_url && (
           <div className="px-2 pb-2">
             <div
-              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 transition-colors group relative"
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg border border-blue-500 bg-white hover:bg-blue-50 transition-colors group relative"
               onMouseEnter={() => setShowDownloadDiv(true)}
               onMouseLeave={() => setShowDownloadDiv(false)}
             >

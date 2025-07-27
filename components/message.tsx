@@ -23,7 +23,6 @@ import { UseChatHelpers } from '@ai-sdk/react';
 const PurePreviewMessage = ({
   chatId,
   message,
-  vote,
   isLoading,
   setMessages,
   reload,
@@ -31,7 +30,6 @@ const PurePreviewMessage = ({
 }: {
   chatId: string;
   message: UIMessage;
-  vote: Vote | undefined;
   isLoading: boolean;
   setMessages: UseChatHelpers['setMessages'];
   reload: UseChatHelpers['reload'];
@@ -222,7 +220,6 @@ const PurePreviewMessage = ({
                 key={`action-${message.id}`}
                 chatId={chatId}
                 message={message}
-                vote={vote}
                 isLoading={isLoading}
               />
             )}

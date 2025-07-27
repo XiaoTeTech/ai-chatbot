@@ -3,9 +3,8 @@
 import type { Attachment, UIMessage } from 'ai';
 import { useChat } from '@ai-sdk/react';
 import { useState } from 'react';
-import useSWR, { useSWRConfig } from 'swr';
+import { useSWRConfig } from 'swr';
 import { ChatHeader } from '@/components/chat-header';
-import type { Vote } from '@/lib/db/schema';
 import { fetcher } from '@/lib/utils';
 import { Artifact } from './artifact';
 import { MultimodalInput } from './multimodal-input';
@@ -102,11 +101,6 @@ export function Chat({
     },
   });
 
-  const { data: votes } = useSWR<Array<Vote>>(
-    messages.length >= 2 && id !== 'new' ? `/api/vote?chatId=${id}` : null,
-    fetcher,
-  );
-
   const [attachments, setAttachments] = useState<Array<Attachment>>([]);
   const [lastMessageMetadata, setLastMessageMetadata] = useState<{
     conversationId?: number;
@@ -135,13 +129,11 @@ export function Chat({
         <Messages
           chatId={id}
           status={status}
-          votes={votes}
           messages={messages as any}
           setMessages={setMessages}
           reload={reload}
           isReadonly={isReadonly}
           isArtifactVisible={isArtifactVisible}
-          lastMessageMetadata={lastMessageMetadata}
         />
 
         <form
@@ -179,7 +171,6 @@ export function Chat({
         messages={messages as any}
         setMessages={setMessages}
         reload={reload}
-        votes={votes}
         isReadonly={isReadonly}
       />
     </>

@@ -11,7 +11,7 @@ import {
 } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
 import { useDebounceCallback, useWindowSize } from 'usehooks-ts';
-import { zhCN } from 'date-fns/locale'; 
+import { zhCN } from 'date-fns/locale';
 import type { Document, Vote } from '@/lib/db/schema';
 import { fetcher } from '@/lib/utils';
 import { MultimodalInput } from './multimodal-input';
@@ -65,7 +65,6 @@ function PureArtifact({
   messages,
   setMessages,
   reload,
-  votes,
   isReadonly,
 }: {
   chatId: string;
@@ -77,7 +76,6 @@ function PureArtifact({
   setAttachments: Dispatch<SetStateAction<Array<Attachment>>>;
   messages: Array<UIMessage>;
   setMessages: UseChatHelpers['setMessages'];
-  votes: Array<Vote> | undefined;
   append: UseChatHelpers['append'];
   handleSubmit: UseChatHelpers['handleSubmit'];
   reload: UseChatHelpers['reload'];
@@ -427,7 +425,7 @@ function PureArtifact({
                         new Date(),
                         {
                           addSuffix: true,
-                          locale: zhCN,  
+                          locale: zhCN,
                         },
                       )}`}
                     </div>

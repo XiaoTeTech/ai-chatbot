@@ -9,6 +9,7 @@ import { useSession } from 'next-auth/react';
 import { useLoginDialog } from '@/lib/context';
 import { useRouter } from 'next/navigation';
 import { useAppConfig } from '@/lib/hooks/use-app-config';
+import { Markdown } from './markdown';
 // 自定义消息类型
 type SimpleUIMessage = {
   id: string;
@@ -93,15 +94,16 @@ function BeautifulMessages({
   onCopyMessage,
   onVoteMessage,
   onSuggestionClick,
+  session,
 }: {
   messages: SimpleUIMessage[];
   isLoading: boolean;
   onCopyMessage: (content: string) => void;
   onVoteMessage: (messageId: string, voteType: 'up' | 'down') => void;
   onSuggestionClick: (suggestion: string) => void;
+  session: any;
 }) {
   const { config } = useAppConfig();
-  const { data: session } = useSession();
 
   // 默认配置，用于未登录用户
   const defaultConfig = {
@@ -229,8 +231,8 @@ function BeautifulMessages({
                   data-testid="message-content"
                   className="flex flex-col gap-4"
                 >
-                  <p className="whitespace-pre-wrap break-words">
-                    {message.content}
+                  <div className="markdown-content">
+                    <Markdown>{message.content}</Markdown>
                     {isLoading &&
                       index === messages.length - 1 &&
                       message.role === 'assistant' && (
@@ -238,7 +240,7 @@ function BeautifulMessages({
                           <LoadingIndicator type="spinner" />
                         </span>
                       )}
-                  </p>
+                  </div>
                 </div>
               </div>
 
@@ -417,10 +419,28 @@ export function Chat({
 
   // 处理建议点击 - 直接发送消息
   const handleSuggestionClick = async (suggestion: string) => {
+    console.log('🔍 建议点击检查:', {
+      hasSession: !!session,
+      hasUser: !!session?.user,
+      userInfo: session?.user
+        ? { id: session.user.id, name: session.user.name }
+        : null,
+    });
+
+    // 如果没有 session，稍微等待一下再检查（处理登录后的状态同步延迟）
     if (!session?.user) {
-      openLoginDialog();
-      return;
+      console.log('⏳ 第一次检查没有 session，等待 100ms 后重试...');
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // 重新检查 session 状态
+      if (!session?.user) {
+        console.log('❌ 重试后仍然没有 session 或 user，打开登录对话框');
+        openLoginDialog();
+        return;
+      }
     }
+
+    console.log('✅ Session 验证通过，发送消息');
 
     if (isLoading) {
       toast.error('请等待模型完成回复！');
@@ -758,6 +778,7 @@ export function Chat({
           onCopyMessage={copyToClipboard}
           onVoteMessage={handleVote}
           onSuggestionClick={handleSuggestionClick}
+          session={session}
         />
         <form
           onSubmit={handleSubmit}

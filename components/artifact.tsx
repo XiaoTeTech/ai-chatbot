@@ -12,7 +12,7 @@ import {
 import useSWR, { useSWRConfig } from 'swr';
 import { useDebounceCallback, useWindowSize } from 'usehooks-ts';
 import { zhCN } from 'date-fns/locale';
-import type { Document, Vote } from '@/lib/db/schema';
+import type { Document } from '@/lib/db/schema';
 import { fetcher } from '@/lib/utils';
 import { MultimodalInput } from './multimodal-input';
 import { Toolbar } from './toolbar';
@@ -312,7 +312,6 @@ function PureArtifact({
                 <ArtifactMessages
                   chatId={chatId}
                   status={status}
-                  votes={votes}
                   messages={messages}
                   setMessages={setMessages}
                   reload={reload}
@@ -500,7 +499,6 @@ function PureArtifact({
 
 export const Artifact = memo(PureArtifact, (prevProps, nextProps) => {
   if (prevProps.status !== nextProps.status) return false;
-  if (!equal(prevProps.votes, nextProps.votes)) return false;
   if (prevProps.input !== nextProps.input) return false;
   if (!equal(prevProps.messages, nextProps.messages.length)) return false;
 

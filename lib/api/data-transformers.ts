@@ -71,7 +71,12 @@ export function transformChatHistoryToDBMessage(
 export function transformChatHistoryToDBMessages(
   response: ChatHistoryPaginatedResponse,
 ): DBMessage[] {
-  return response.items.map(transformChatHistoryToDBMessage);
+  const messages = response.items.map(transformChatHistoryToDBMessage);
+
+  // 按时间戳排序，确保消息按正确的时间顺序显示
+  return messages.sort((a, b) => {
+    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+  });
 }
 
 // 将DBMessage转换为UIMessage（用于前端显示）

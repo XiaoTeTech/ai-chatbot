@@ -48,7 +48,7 @@ export async function POST(request: Request) {
 
     // 调用外部API进行交互
     const result = await externalChatService.interactWithMessage(
-      session.user.lcSessionToken,
+      (session.user as ExtendedUser).lcSessionToken as string,
       {
         conversation_id: Number(conversation_id),
         msg_id: Number(msg_id),

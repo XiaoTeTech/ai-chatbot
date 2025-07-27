@@ -252,7 +252,16 @@ function PureMultimodalInput({
             event.preventDefault();
 
             if (status !== 'ready') {
-              toast.error('停止生成');
+              // 触发停止按钮的提示显示
+              const tooltip = document.querySelector(
+                '[data-testid="stop-tooltip"]',
+              ) as HTMLElement;
+              if (tooltip) {
+                tooltip.setAttribute('data-show-tooltip', 'true');
+                setTimeout(() => {
+                  tooltip.removeAttribute('data-show-tooltip');
+                }, 2000);
+              }
             } else {
               submitForm();
             }

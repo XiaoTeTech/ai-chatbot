@@ -426,7 +426,14 @@ export function Chat({
     }
 
     if (isLoading) {
-      toast.error('停止生成');
+      // 触发停止按钮的提示显示
+      const tooltip = document.querySelector('[data-testid="stop-tooltip"]') as HTMLElement;
+      if (tooltip) {
+        tooltip.setAttribute('data-show-tooltip', 'true');
+        setTimeout(() => {
+          tooltip.removeAttribute('data-show-tooltip');
+        }, 2000);
+      }
       return;
     }
 
@@ -642,7 +649,14 @@ export function Chat({
     }
 
     if (isLoading) {
-      toast.error('停止生成');
+      // 触发停止按钮的提示显示
+      const tooltip = document.querySelector('[data-testid="stop-tooltip"]') as HTMLElement;
+      if (tooltip) {
+        tooltip.setAttribute('data-show-tooltip', 'true');
+        setTimeout(() => {
+          tooltip.removeAttribute('data-show-tooltip');
+        }, 2000);
+      }
       return;
     }
 
@@ -803,11 +817,25 @@ export function Chat({
           onSuggestionClick={handleSuggestionClick}
           session={session}
         />
-        <form
-          onSubmit={handleSubmit}
-          className="mx-auto px-4 bg-background pb-4 md:pb-6 gap-2 w-full md:max-w-3xl"
-        >
-          <div className="relative flex items-end gap-2 p-3 border border-input rounded-xl bg-background focus-within:border-ring">
+        <div className="mx-auto px-4 bg-background pb-4 md:pb-6 gap-2 w-full md:max-w-3xl">
+          {/* 停止生成按钮 - 显示在输入框上方 */}
+          {isLoading && (
+            <div className="flex justify-center mb-2">
+              <button
+                type="button"
+                onClick={stop}
+                className="inline-flex items-center justify-center rounded-full w-8 h-8 bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+                title="停止生成"
+              >
+                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                  <rect x="4" y="4" width="16" height="16" rx="2" />
+                </svg>
+              </button>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit}>
+            <div className="relative flex items-end gap-2 p-3 border border-input rounded-xl bg-background focus-within:border-ring">
             <div className="flex-1 min-h-[60px] flex items-center">
               <textarea
                 value={input}
@@ -836,20 +864,31 @@ export function Chat({
 
             <div className="flex gap-1">
               {isLoading ? (
-                <button
-                  type="button"
-                  onClick={stop}
-                  className="inline-flex items-center justify-center rounded-full w-8 h-8 bg-blue-500 text-white hover:bg-blue-600 transition-colors"
-                  title="停止生成"
-                >
-                  <svg
-                    className="w-3 h-3"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={stop}
+                    data-testid="stop-button"
+                    className="inline-flex items-center justify-center rounded-full w-8 h-8 bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+                    title="停止生成"
                   >
-                    <rect x="4" y="4" width="16" height="16" rx="2" />
-                  </svg>
-                </button>
+                    <svg
+                      className="w-3 h-3"
+                      fill="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <rect x="4" y="4" width="16" height="16" rx="2" />
+                    </svg>
+                  </button>
+                  {/* Tooltip */}
+                  <div
+                    data-testid="stop-tooltip"
+                    className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded whitespace-nowrap opacity-0 pointer-events-none transition-opacity duration-200 data-[show-tooltip]:opacity-100"
+                  >
+                    停止生成
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-black"></div>
+                  </div>
+                </div>
               ) : (
                 <button
                   type="submit"

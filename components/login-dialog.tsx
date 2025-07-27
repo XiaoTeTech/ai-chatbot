@@ -109,11 +109,11 @@ export function LoginDialog() {
       console.log('登录结果:', result); // 打印登录结果
 
       if (result.status === 'success') {
-        update(); // 更新 session
+        await update(); // 等待 session 更新完成
         toast.success('登录成功');
         close();
+        // 不需要跳转，直接刷新当前页面
         router.refresh();
-        router.push('/');
       } else if (result.status === 'failed') {
         toast.error('验证码错误或手机号无效');
       } else if (result.status === 'invalid_data') {

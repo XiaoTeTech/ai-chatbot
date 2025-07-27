@@ -397,7 +397,7 @@ export function Chat({
   selectedVisibilityType,
   isReadonly,
 }: ChatProps) {
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
   const { open: openLoginDialog } = useLoginDialog();
   const router = useRouter();
   const { mutate } = useSWRConfig();
@@ -419,30 +419,11 @@ export function Chat({
 
   // 处理建议点击 - 直接发送消息
   const handleSuggestionClick = async (suggestion: string) => {
-    console.log('🔍 建议点击检查:', {
-      status,
-      hasSession: !!session,
-      hasUser: !!session?.user,
-      userInfo: session?.user
-        ? { id: session.user.id, name: session.user.name }
-        : null,
-    });
-
-    // 如果 session 还在加载中，等待加载完成
-    if (status === 'loading') {
-      console.log('⏳ Session 正在加载中，等待...');
-      toast.info('正在验证登录状态，请稍候...');
-      return;
-    }
-
-    // 如果没有 session，打开登录对话框
-    if (status === 'unauthenticated' || !session?.user) {
-      console.log('❌ 用户未登录，打开登录对话框');
+    // 简单检查：如果没有 session 就打开登录对话框
+    if (!session?.user) {
       openLoginDialog();
       return;
     }
-
-    console.log('✅ Session 验证通过，发送消息');
 
     if (isLoading) {
       toast.error('请等待模型完成回复！');
@@ -569,22 +550,8 @@ export function Chat({
 
   // 处理点赞/踩
   const handleVote = async (messageId: string, voteType: 'up' | 'down') => {
-    console.log('🔍 投票检查:', {
-      status,
-      hasSession: !!session,
-      hasUser: !!session?.user,
-    });
-
-    // 如果 session 还在加载中，等待加载完成
-    if (status === 'loading') {
-      console.log('⏳ Session 正在加载中，等待...');
-      toast.info('正在验证登录状态，请稍候...');
-      return;
-    }
-
-    // 如果没有 session，打开登录对话框
-    if (status === 'unauthenticated' || !session?.user) {
-      console.log('❌ 用户未登录，打开登录对话框');
+    // 简单检查：如果没有 session 就打开登录对话框
+    if (!session?.user) {
       openLoginDialog();
       return;
     }
@@ -664,6 +631,7 @@ export function Chat({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // 简单检查：如果没有 session 就打开登录对话框
     if (!session?.user) {
       openLoginDialog();
       return;

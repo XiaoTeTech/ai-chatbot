@@ -94,7 +94,29 @@ function BeautifulMessages({
                     {isLoading &&
                       index === messages.length - 1 &&
                       message.role === 'assistant' && (
-                        <span className="inline-block w-2 h-4 bg-gray-400 animate-pulse ml-1" />
+                        <span className="inline-flex items-center ml-2">
+                          {/* 旋转加载器 */}
+                          <svg
+                            className="animate-spin h-4 w-4 text-muted-foreground"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                            ></circle>
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            ></path>
+                          </svg>
+                        </span>
                       )}
                   </p>
                 </div>
@@ -201,22 +223,67 @@ function BeautifulMessages({
                 </div>
               </div>
               <div className="flex flex-col gap-4 w-full">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <div className="flex gap-1">
-                    <div
-                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                      style={{ animationDelay: '0ms' }}
-                    />
-                    <div
-                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                      style={{ animationDelay: '150ms' }}
-                    />
-                    <div
-                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                      style={{ animationDelay: '300ms' }}
-                    />
+                <div className="flex flex-row gap-2 items-start">
+                  <div
+                    data-testid="message-content"
+                    className="flex flex-col gap-4"
+                  >
+                    <div className="flex items-center gap-4 py-2">
+                      {/* 选项1: 三个跳动的点 */}
+                      <div className="flex gap-1">
+                        <div
+                          className="w-2 h-2 bg-muted-foreground/60 rounded-full animate-bounce"
+                          style={{
+                            animationDelay: '0ms',
+                            animationDuration: '1.4s',
+                          }}
+                        />
+                        <div
+                          className="w-2 h-2 bg-muted-foreground/60 rounded-full animate-bounce"
+                          style={{
+                            animationDelay: '0.2s',
+                            animationDuration: '1.4s',
+                          }}
+                        />
+                        <div
+                          className="w-2 h-2 bg-muted-foreground/60 rounded-full animate-bounce"
+                          style={{
+                            animationDelay: '0.4s',
+                            animationDuration: '1.4s',
+                          }}
+                        />
+                      </div>
+
+                      {/* 选项2: 旋转加载器 */}
+                      <div className="flex items-center">
+                        <svg
+                          className="animate-spin h-4 w-4 text-muted-foreground/60"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                          />
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          />
+                        </svg>
+                      </div>
+
+                      {/* 选项3: 脉冲文字 */}
+                      <div className="text-sm text-muted-foreground/60 animate-pulse">
+                        AI正在思考...
+                      </div>
+                    </div>
                   </div>
-                  <span className="text-sm">正在思考...</span>
                 </div>
               </div>
             </div>

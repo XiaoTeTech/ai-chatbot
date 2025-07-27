@@ -99,16 +99,6 @@ export async function POST(request: Request) {
             const { done, value } = await reader.read();
             if (done) {
               console.log('🏁 Stream finished');
-              // 在流结束时发送真实的 conversation_id
-              if (realConversationId) {
-                const conversationData = {
-                  type: 'conversation_id',
-                  content: realConversationId,
-                };
-                controller.enqueue(
-                  encoder.encode(`2:${JSON.stringify(conversationData)}\n`),
-                );
-              }
               break;
             }
 
@@ -128,6 +118,17 @@ export async function POST(request: Request) {
                       console.log(
                         '🆔 Real conversation ID:',
                         realConversationId,
+                      );
+
+                      // 立即发送 conversation_id 数据
+                      const conversationData = {
+                        type: 'conversation_id',
+                        content: realConversationId,
+                      };
+                      controller.enqueue(
+                        encoder.encode(
+                          `2:${JSON.stringify(conversationData)}\n`,
+                        ),
                       );
                     }
 

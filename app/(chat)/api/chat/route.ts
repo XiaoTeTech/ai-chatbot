@@ -110,11 +110,62 @@ export async function POST(request: Request) {
     );
     console.log('🔍 Stream response properties:', Object.keys(streamResponse));
 
-    // 外部API返回的是标准的OpenAI兼容格式，直接返回
-    console.log('🔄 Returning external API stream directly...');
-    return new Response(streamResponse, {
+    // 创建转换流，将外部API的SSE格式转换为AI SDK期望的格式
+    console.log('🔄 Creating transformed stream for AI SDK...');
+
+    const transformedStream = new ReadableStream({
+      async start(controller) {
+        const reader = streamResponse.getReader();
+        const decoder = new TextDecoder();
+        const encoder = new TextEncoder();
+
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) {
+              console.log('🏁 Stream finished');
+              break;
+            }
+
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split('\n');
+
+            for (const line of lines) {
+              if (line.startsWith('data:') && !line.includes('[DONE]')) {
+                try {
+                  const jsonStr = line.substring(5).trim();
+                  if (jsonStr) {
+                    const data = JSON.parse(jsonStr);
+
+                    // 提取消息内容
+                    if (data.choices?.[0]?.delta?.content) {
+                      const content = data.choices[0].delta.content;
+                      console.log('📝 Streaming content:', content);
+
+                      // AI SDK期望的格式：每个内容块作为单独的数据块
+                      controller.enqueue(
+                        encoder.encode(`0:"${content.replace(/"/g, '\\"')}"\n`),
+                      );
+                    }
+                  }
+                } catch (e) {
+                  console.warn('⚠️ Failed to parse streaming data:', line, e);
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.error('💥 Stream processing error:', error);
+          controller.error(error);
+        } finally {
+          controller.close();
+        }
+      },
+    });
+
+    return new Response(transformedStream, {
       headers: {
-        'Content-Type': 'text/event-stream',
+        'Content-Type': 'text/plain; charset=utf-8',
         'Cache-Control': 'no-cache',
         Connection: 'keep-alive',
       },

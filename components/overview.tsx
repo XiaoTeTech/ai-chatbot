@@ -1,8 +1,10 @@
 import { motion } from 'framer-motion';
 import { useSession } from 'next-auth/react';
+import { useAppConfig } from '@/hooks/use-app-config';
 
 export const Overview = () => {
   const { data: session } = useSession();
+  const { appConfig } = useAppConfig();
 
   const currentHour = new Date().getHours();
 
@@ -27,9 +29,14 @@ export const Overview = () => {
       transition={{ delay: 0.5 }}
     >
       <div className="rounded-xl p-6 flex flex-col gap-8 leading-relaxed text-center max-w-xl">
-      <p className="text-3xl font-bold text-gray-900 dark:text-white">
-         {greeting}，{session?.user?.name || '用户'}！
-</p>
+        <p className="text-3xl font-bold text-gray-900 dark:text-white">
+          {greeting}，{session?.user?.name || '用户'}！
+        </p>
+        {appConfig?.chat_introduction && (
+          <p className="text-lg text-muted-foreground">
+            {appConfig.chat_introduction}
+          </p>
+        )}
       </div>
     </motion.div>
   );

@@ -35,13 +35,11 @@ export function AppSidebar({ user }: { user: User | undefined }) {
               }}
               className="flex flex-row gap-3 items-center"
             >
-              <Image
-                src="https://static.xiaote.com/favicon.ico"
-                width={30}
-                height={30}
-                alt="Logo"
-              />
-              <span style={{ transform: 'translateX(-10px)' }} className="text-lg font-semibold px-2 hover:bg-muted rounded-md cursor-pointer">
+              <Image src="/images/icon.png" width={30} height={30} alt="Logo" />
+              <span
+                style={{ transform: 'translateX(-10px)' }}
+                className="text-lg font-semibold px-2 hover:bg-muted rounded-md cursor-pointer"
+              >
                 小特
               </span>
             </Link>
@@ -72,4 +70,3 @@ export function AppSidebar({ user }: { user: User | undefined }) {
     </Sidebar>
   );
 }
-    

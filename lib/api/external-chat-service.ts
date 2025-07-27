@@ -339,7 +339,7 @@ export class ExternalChatService {
     lcSessionToken: string,
     request: ChatCompletionRequest,
   ): Promise<ReadableStream> {
-    const url = `${this.baseUrl}/v2/chat/completions`; // 使用v2端点
+    const url = `${this.baseUrl}/v1/chat/completions`; // 使用v1端点
     const headers = this.createHeaders(lcSessionToken, true); // 使用Authorization header
 
     // 添加默认参数

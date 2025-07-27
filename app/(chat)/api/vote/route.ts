@@ -1,5 +1,6 @@
 import { auth } from '@/app/(auth)/auth';
-import { getChatById, getVotesByChatId, voteMessage } from '@/lib/db/queries';
+import { externalChatService } from '@/lib/api/external-chat-service';
+import { transformVoteTypeToInteractionType } from '@/lib/api/data-transformers';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -15,19 +16,37 @@ export async function GET(request: Request) {
     return new Response('Unauthorized', { status: 401 });
   }
 
-  const chat = await getChatById({ id: chatId });
-
-  if (!chat) {
-    return new Response('Chat not found', { status: 404 });
+  // 检查是否有lcSessionToken
+  if (!session.user.lcSessionToken) {
+    return new Response('Missing LC Session Token', { status: 401 });
   }
 
-  if (chat.userId !== session.user.id) {
-    return new Response('Unauthorized', { status: 401 });
+  try {
+    const conversationId = Number.parseInt(chatId);
+    if (Number.isNaN(conversationId)) {
+      return new Response('Invalid conversation ID', { status: 400 });
+    }
+
+    // 获取聊天历史，其中包含投票状态
+    const chatHistoryResponse = await externalChatService.getChatHistory(
+      session.user.lcSessionToken,
+      conversationId,
+    );
+
+    // 转换投票数据格式以兼容前端
+    const votes = chatHistoryResponse.items
+      .filter((item) => item.vote_status)
+      .map((item) => ({
+        chatId: chatId,
+        messageId: item.msg_id.toString(),
+        isUpvoted: item.vote_status === 'praise',
+      }));
+
+    return Response.json(votes, { status: 200 });
+  } catch (error) {
+    console.error('Failed to get votes:', error);
+    return new Response('Failed to get votes', { status: 500 });
   }
-
-  const votes = await getVotesByChatId({ id: chatId });
-
-  return Response.json(votes, { status: 200 });
 }
 
 export async function PATCH(request: Request) {
@@ -48,21 +67,52 @@ export async function PATCH(request: Request) {
     return new Response('Unauthorized', { status: 401 });
   }
 
-  const chat = await getChatById({ id: chatId });
-
-  if (!chat) {
-    return new Response('Chat not found', { status: 404 });
+  // 检查是否有lcSessionToken
+  if (!session.user.lcSessionToken) {
+    return new Response('Missing LC Session Token', { status: 401 });
   }
 
-  if (chat.userId !== session.user.id) {
-    return new Response('Unauthorized', { status: 401 });
+  try {
+    const conversationId = Number.parseInt(chatId);
+    const msgId = Number.parseInt(messageId);
+
+    if (Number.isNaN(conversationId) || Number.isNaN(msgId)) {
+      return new Response('Invalid conversation or message ID', {
+        status: 400,
+      });
+    }
+
+    // 首先获取当前投票状态
+    const chatHistoryResponse = await externalChatService.getChatHistory(
+      session.user.lcSessionToken,
+      conversationId,
+    );
+
+    const currentMessage = chatHistoryResponse.items.find(
+      (item) => item.msg_id === msgId,
+    );
+
+    const currentVoteStatus = currentMessage?.vote_status;
+
+    // 转换投票类型为交互类型
+    const interactionType = transformVoteTypeToInteractionType(
+      type,
+      currentVoteStatus,
+    );
+
+    // 调用外部API进行投票
+    const result = await externalChatService.interactWithMessage(
+      session.user.lcSessionToken,
+      {
+        conversation_id: conversationId,
+        msg_id: msgId,
+        interaction_type: interactionType,
+      },
+    );
+
+    return Response.json({ vote_status: result.vote_status }, { status: 200 });
+  } catch (error) {
+    console.error('Failed to vote message:', error);
+    return new Response('Failed to vote message', { status: 500 });
   }
-
-  await voteMessage({
-    chatId,
-    messageId,
-    type: type,
-  });
-
-  return new Response('Message voted', { status: 200 });
 }

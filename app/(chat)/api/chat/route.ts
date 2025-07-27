@@ -1,34 +1,11 @@
-import {
-  type UIMessage,
-  appendResponseMessages,
-  createDataStreamResponse,
-  smoothStream,
-  streamText,
-} from 'ai';
+import type { UIMessage } from 'ai';
 import { auth } from '@/app/(auth)/auth';
-import { systemPrompt } from '@/lib/ai/prompts';
-import {
-  deleteChatById,
-  getChatById,
-  saveChat,
-  saveMessages,
-} from '@/lib/db/queries';
-import {
-  generateUUID,
-  getMostRecentUserMessage,
-  getTrailingMessageId,
-} from '@/lib/utils';
-import { generateTitleFromUserMessage } from '../../actions';
-import { createDocument } from '@/lib/ai/tools/create-document';
-import { updateDocument } from '@/lib/ai/tools/update-document';
-import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
-import { getWeather } from '@/lib/ai/tools/get-weather';
-import { isProductionEnvironment } from '@/lib/constants';
-import { myProvider } from '@/lib/ai/providers';
+import { externalChatService } from '@/lib/api/external-chat-service';
+import { getMostRecentUserMessage } from '@/lib/utils';
 import { suggestedActions } from '@/lib/suggested-actions-data';
 
 // 提取建议操作的文本内容用于匹配
-const SUGGESTED_ACTION_TEXTS = suggestedActions.map(action => action.action);
+const SUGGESTED_ACTION_TEXTS = suggestedActions.map((action) => action.action);
 
 export const maxDuration = 60;
 
@@ -50,6 +27,11 @@ export async function POST(request: Request) {
       return new Response('Unauthorized', { status: 401 });
     }
 
+    // 检查是否有lcSessionToken
+    if (!session.user.lcSessionToken) {
+      return new Response('Missing LC Session Token', { status: 401 });
+    }
+
     const userMessage = getMostRecentUserMessage(messages);
 
     if (!userMessage) {
@@ -57,117 +39,37 @@ export async function POST(request: Request) {
     }
 
     // 检查最新的用户消息是否匹配建议操作列表
-    console.log(userMessage.content)
-    const messageContent = typeof userMessage.content === 'string' 
-      ? userMessage.content 
-      : '';
-        
+    console.log(userMessage.content);
+    const messageContent =
+      typeof userMessage.content === 'string' ? userMessage.content : '';
+
     const isSuggestedAction = SUGGESTED_ACTION_TEXTS.includes(messageContent);
-    const chat = await getChatById({ id });
 
-    if (!chat) {
-      const title = await generateTitleFromUserMessage({
-        message: userMessage,
-      });
+    // 转换消息格式为外部API格式
+    const externalMessages = messages.map((msg) => ({
+      role: msg.role,
+      content: typeof msg.content === 'string' ? msg.content : '',
+    }));
 
-      await saveChat({ id, userId: session.user.id, title });
-    } else {
-      if (chat.userId !== session.user.id) {
-        return new Response('Unauthorized', { status: 401 });
-      }
-    }
+    // 确定使用的模型
+    const modelName = isSuggestedAction ? 'suggested-model' : selectedChatModel;
 
-    await saveMessages({
-      messages: [
-        {
-          chatId: id,
-          id: userMessage.id,
-          role: 'user',
-          parts: userMessage.parts,
-          attachments: userMessage.experimental_attachments ?? [],
-          createdAt: new Date(),
-        },
-      ],
-    });
-    const modelName = isSuggestedAction ? "suggested-model" : selectedChatModel;
-    const model = (await myProvider()).languageModel(modelName);
-    return createDataStreamResponse({
-      execute: async (dataStream) => {
-        const result = streamText({
-          model: model,
-          system: systemPrompt({ selectedChatModel }),
-          messages,
-          maxSteps: 5,
-          experimental_activeTools:
-            selectedChatModel === 'chat-model-reasoning'
-              ? []
-              : [
-                  'getWeather',
-                  'createDocument',
-                  'updateDocument',
-                  'requestSuggestions',
-                ],
-          experimental_generateMessageId: generateUUID,
-          tools: {
-            getWeather,
-            createDocument: createDocument({ session, dataStream }),
-            updateDocument: updateDocument({ session, dataStream }),
-            requestSuggestions: requestSuggestions({
-              session,
-              dataStream,
-            }),
-          },
-          onFinish: async ({ response }) => {
-            if (session.user?.id) {
-              try {
-                const assistantId = getTrailingMessageId({
-                  messages: response.messages.filter(
-                    (message) => message.role === 'assistant',
-                  ),
-                });
-
-                if (!assistantId) {
-                  throw new Error('No assistant message found!');
-                }
-
-                const [, assistantMessage] = appendResponseMessages({
-                  messages: [userMessage],
-                  responseMessages: response.messages,
-                });
-
-                await saveMessages({
-                  messages: [
-                    {
-                      id: assistantId,
-                      chatId: id,
-                      role: assistantMessage.role,
-                      parts: assistantMessage.parts,
-                      attachments:
-                        assistantMessage.experimental_attachments ?? [],
-                      createdAt: new Date(),
-                    },
-                  ],
-                });
-              } catch (_) {
-                console.error('Failed to save chat');
-              }
-            }
-          },
-          experimental_telemetry: {
-            isEnabled: isProductionEnvironment,
-            functionId: 'stream-text',
-          },
-        });
-
-        result.consumeStream();
-
-        result.mergeIntoDataStream(dataStream, {
-          sendReasoning: true,
-        });
+    // 调用外部LLM API进行流式聊天
+    const streamResponse = await externalChatService.chatCompletionStream(
+      session.user.lcSessionToken,
+      {
+        model: modelName,
+        messages: externalMessages,
+        stream: true,
+        conversation_id: id,
       },
-      onError: (error) => {
-        console.error(error);
-        return 'Oops, 发生错误';
+    );
+
+    // 直接返回外部API的流式响应
+    return new Response(streamResponse, {
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Transfer-Encoding': 'chunked',
       },
     });
   } catch (error) {
@@ -192,17 +94,26 @@ export async function DELETE(request: Request) {
     return new Response('Unauthorized', { status: 401 });
   }
 
-  try {
-    const chat = await getChatById({ id });
+  // 检查是否有lcSessionToken
+  if (!session.user.lcSessionToken) {
+    return new Response('Missing LC Session Token', { status: 401 });
+  }
 
-    if (chat.userId !== session.user.id) {
-      return new Response('Unauthorized', { status: 401 });
+  try {
+    const conversationId = Number.parseInt(id);
+    if (Number.isNaN(conversationId)) {
+      return new Response('Invalid conversation ID', { status: 400 });
     }
 
-    await deleteChatById({ id });
+    // 调用外部API删除对话
+    await externalChatService.deleteConversation(
+      session.user.lcSessionToken,
+      conversationId,
+    );
 
     return new Response('Chat deleted', { status: 200 });
   } catch (error) {
+    console.error('Failed to delete conversation:', error);
     return new Response('处理您的请求时出现了错误！', {
       status: 500,
     });

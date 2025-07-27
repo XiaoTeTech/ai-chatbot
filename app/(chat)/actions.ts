@@ -3,12 +3,13 @@
 import { generateText, Message } from 'ai';
 import { cookies } from 'next/headers';
 
-import {
-  deleteMessagesByChatIdAfterTimestamp,
-  getMessageById,
-  updateChatVisiblityById,
-} from '@/lib/db/queries';
-import { VisibilityType } from '@/components/visibility-selector';
+// 注意：这些函数现在使用外部API，不再需要数据库查询
+// import {
+//   deleteMessagesByChatIdAfterTimestamp,
+//   getMessageById,
+//   updateChatVisiblityById,
+// } from '@/lib/db/queries';
+// import { VisibilityType } from '@/components/visibility-selector';
 import { myProvider } from '@/lib/ai/providers';
 
 export async function saveChatModelAsCookie(model: string) {
@@ -34,21 +35,19 @@ export async function generateTitleFromUserMessage({
   return title;
 }
 
-export async function deleteTrailingMessages({ id }: { id: string }) {
-  const [message] = await getMessageById({ id });
+// 这些函数现在需要通过外部API实现，暂时注释掉
+// export async function deleteTrailingMessages({ id }: { id: string }) {
+//   // 需要调用外部API删除消息
+//   console.warn('deleteTrailingMessages not implemented with external API');
+// }
 
-  await deleteMessagesByChatIdAfterTimestamp({
-    chatId: message.chatId,
-    timestamp: message.createdAt,
-  });
-}
-
-export async function updateChatVisibility({
-  chatId,
-  visibility,
-}: {
-  chatId: string;
-  visibility: VisibilityType;
-}) {
-  await updateChatVisiblityById({ chatId, visibility });
-}
+// export async function updateChatVisibility({
+//   chatId,
+//   visibility,
+// }: {
+//   chatId: string;
+//   visibility: VisibilityType;
+// }) {
+//   // 需要调用外部API更新对话可见性
+//   console.warn('updateChatVisibility not implemented with external API');
+// }

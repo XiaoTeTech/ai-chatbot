@@ -3,87 +3,88 @@ import { notFound } from 'next/navigation';
 
 import { auth } from '@/app/(auth)/auth';
 import { Chat } from '@/components/chat';
-import { getChatById, getMessagesByChatId } from '@/lib/db/queries';
+import { externalChatService } from '@/lib/api/external-chat-service';
+import {
+  transformChatHistoryToDBMessages,
+  transformDBMessagesToUIMessages,
+} from '@/lib/api/data-transformers';
 import { DataStreamHandler } from '@/components/data-stream-handler';
 import { DEFAULT_CHAT_MODEL } from '@/lib/ai/models';
-import type { DBMessage } from '@/lib/db/schema';
-import type { Attachment, UIMessage } from 'ai';
 
 export default async function Page(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
   const { id } = params;
-  const chat = await getChatById({ id });
-
-  if (!chat) {
-    notFound();
-  }
 
   const session = await auth();
 
-  if (chat.visibility === 'private') {
-    if (!session || !session.user) {
+  if (!session || !session.user) {
+    return notFound();
+  }
+
+  // 检查是否有lcSessionToken
+  if (!session.user.lcSessionToken) {
+    return notFound();
+  }
+
+  try {
+    // 获取对话详情
+    const conversationId = Number.parseInt(id);
+    if (Number.isNaN(conversationId)) {
       return notFound();
     }
 
-    if (session.user.id !== chat.userId) {
+    const chat = await externalChatService.getConversationDetail(
+      session.user.lcSessionToken,
+      conversationId,
+    );
+
+    if (!chat) {
       return notFound();
     }
-  }
 
-  const messagesFromDb = await getMessagesByChatId({
-    id,
-  });
+    // 获取聊天历史消息
+    const chatHistoryResponse = await externalChatService.getChatHistory(
+      session.user.lcSessionToken,
+      conversationId,
+      undefined, // keyword
+      1, // page
+      100, // pageSize - 获取所有消息
+    );
 
-  function convertToUIMessages(messages: Array<DBMessage>): Array<UIMessage> {
-    return messages.map((message) => {
-      let content = '';
-      if (Array.isArray(message.parts)) {
-        content = message.parts
-          .filter(part => part.type === 'text')
-          .map(part => part.text)
-          .join(' ');
-      }
+    const messagesFromDb =
+      transformChatHistoryToDBMessages(chatHistoryResponse);
 
-      return {
-        id: message.id,
-        parts: message.parts as UIMessage['parts'],
-        role: message.role as UIMessage['role'],
-        content: content,
-        createdAt: message.createdAt,
-        experimental_attachments:
-          (message.attachments as Array<Attachment>) ?? [],
-      };
-    });
-  }
+    // 转换为UI消息格式
+    const uiMessages = transformDBMessagesToUIMessages(messagesFromDb);
 
-  const cookieStore = await cookies();
-  const chatModelFromCookie = cookieStore.get('chat-model');
+    // 创建一个模拟的chat对象，用于兼容现有组件
+    const chatForComponent = {
+      id: chat.id.toString(),
+      title: chat.title || '新对话',
+      userId: session.user.id || '',
+      visibility: 'private' as const,
+      createdAt: new Date(chat.start_time * 1000),
+    };
 
-  if (!chatModelFromCookie) {
+    // 获取cookie中的模型设置
+    const cookieStore = await cookies();
+    const chatModelFromCookie = cookieStore.get('chat-model');
+    const selectedChatModel = chatModelFromCookie?.value || DEFAULT_CHAT_MODEL;
+
     return (
       <>
         <Chat
-          id={chat.id}
-          initialMessages={convertToUIMessages(messagesFromDb)}
-          selectedChatModel={DEFAULT_CHAT_MODEL}
-          selectedVisibilityType={chat.visibility}
-          isReadonly={session?.user?.id !== chat.userId}
+          id={chatForComponent.id}
+          initialMessages={uiMessages}
+          selectedChatModel={selectedChatModel}
+          selectedVisibilityType={chatForComponent.visibility}
+          isReadonly={false}
         />
         <DataStreamHandler id={id} />
       </>
     );
+  } catch (error) {
+    console.error('Failed to load chat:', error);
+    return notFound();
   }
-
-  return (
-    <>
-      <Chat
-        id={chat.id}
-        initialMessages={convertToUIMessages(messagesFromDb)}
-        selectedChatModel={chatModelFromCookie.value}
-        selectedVisibilityType={chat.visibility}
-        isReadonly={session?.user?.id !== chat.userId}
-      />
-      <DataStreamHandler id={id} />
-    </>
-  );
 }

@@ -1,4 +1,4 @@
-import { createOrUpdateUserByLcUserId } from '@/lib/db/queries';
+import { createOrUpdateUserByLcUserId } from '@/lib/db/user-queries';
 import NextAuth, { type Session } from 'next-auth';
 import type { JWT } from 'next-auth/jwt';
 import Credentials from 'next-auth/providers/credentials';

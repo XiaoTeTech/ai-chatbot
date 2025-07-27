@@ -32,11 +32,12 @@ export async function POST(request: Request) {
       return new Response('Missing LC Session Token', { status: 401 });
     }
 
-    console.log('LLM Chat Request - User ID:', session.user.id);
-    console.log(
-      'LLM Chat Request - LC Session Token:',
-      session.user.lcSessionToken?.substring(0, 10) + '...',
-    );
+    // 调试日志（生产环境中应该移除）
+    // console.log('LLM Chat Request - User ID:', session.user.id);
+    // console.log(
+    //   'LLM Chat Request - LC Session Token:',
+    //   session.user.lcSessionToken?.substring(0, 10) + '...',
+    // );
 
     const userMessage = getMostRecentUserMessage(messages);
 

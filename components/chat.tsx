@@ -367,21 +367,39 @@ export function Chat({
 
       const metadata = await metadataResponse.json();
 
-      // 调用投票API
-      const response = await fetch('/api/vote', {
-        method: 'PATCH',
+      // 获取当前消息的投票状态
+      const currentMessage = messages.find((msg) => msg.id === messageId);
+      const currentVoteStatus = currentMessage?.vote_status;
+
+      // 确定交互类型
+      let interactionType: string;
+      if (voteType === 'up') {
+        // 如果当前已经点赞，则取消点赞；否则点赞
+        interactionType =
+          currentVoteStatus === 'praise' ? 'cancel_praise' : 'add_praise';
+      } else {
+        // 如果当前已经点踩，则取消点踩；否则点踩
+        interactionType =
+          currentVoteStatus === 'criticism'
+            ? 'cancel_criticism'
+            : 'add_criticism';
+      }
+
+      // 调用交互API
+      const response = await fetch('/api/chat/interaction', {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          chatId: id,
-          messageId: messageId,
-          type: voteType,
+          conversation_id: metadata.conversation_id,
+          msg_id: metadata.msg_id,
+          interaction_type: interactionType,
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to vote');
+        throw new Error('Failed to interact with message');
       }
 
       const result = await response.json();
@@ -395,7 +413,14 @@ export function Chat({
         ),
       );
 
-      toast.success(voteType === 'up' ? '点赞成功' : '点踩成功');
+      // 显示成功消息
+      if (result.vote_status === 'praise') {
+        toast.success('点赞成功');
+      } else if (result.vote_status === 'criticism') {
+        toast.success('点踩成功');
+      } else {
+        toast.success('已取消');
+      }
     } catch (error) {
       console.error('Vote failed:', error);
       toast.error('操作失败，请重试');

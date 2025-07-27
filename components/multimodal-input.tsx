@@ -252,7 +252,7 @@ function PureMultimodalInput({
             event.preventDefault();
 
             if (status !== 'ready') {
-              toast.error('请等待模型完成回复！');
+              toast.error('请点击停止按钮结束当前对话，再发送新消息');
             } else {
               submitForm();
             }

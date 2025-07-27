@@ -426,7 +426,7 @@ export function Chat({
     }
 
     if (isLoading) {
-      toast.error('请等待模型完成回复！');
+      toast.error('停止生成');
       return;
     }
 
@@ -637,10 +637,12 @@ export function Chat({
       return;
     }
 
-    if (!input.trim() || isLoading) {
-      if (isLoading) {
-        toast.error('请等待模型完成回复！');
-      }
+    if (!input.trim()) {
+      return;
+    }
+
+    if (isLoading) {
+      toast.error('停止生成');
       return;
     }
 
@@ -817,7 +819,6 @@ export function Chat({
                   }
                 }}
                 placeholder="你想了解什么"
-                disabled={isLoading}
                 rows={2}
                 className="w-full resize-none border-0 bg-transparent px-4 py-3 text-base placeholder:text-muted-foreground focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                 style={{

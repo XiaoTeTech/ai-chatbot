@@ -1,11 +1,17 @@
 'use client';
 
-import { ChatRequestOptions, Message } from 'ai';
+import type { Message } from 'ai';
 import { Button } from './ui/button';
-import { Dispatch, SetStateAction, useEffect, useRef, useState } from 'react';
+import {
+  type Dispatch,
+  type SetStateAction,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { Textarea } from './ui/textarea';
-import { deleteTrailingMessages } from '@/app/(chat)/actions';
-import { UseChatHelpers } from '@ai-sdk/react';
+// import { deleteTrailingMessages } from '@/app/(chat)/actions';
+import type { UseChatHelpers } from '@ai-sdk/react';
 
 export type MessageEditorProps = {
   message: Message;
@@ -71,9 +77,13 @@ export function MessageEditor({
           onClick={async () => {
             setIsSubmitting(true);
 
-            await deleteTrailingMessages({
-              id: message.id,
-            });
+            // TODO: 实现通过外部API删除后续消息的功能
+            // await deleteTrailingMessages({
+            //   id: message.id,
+            // });
+            console.warn(
+              'deleteTrailingMessages not implemented with external API',
+            );
 
             // @ts-expect-error todo: support UIMessage in setMessages
             setMessages((messages) => {

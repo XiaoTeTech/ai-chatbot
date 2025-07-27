@@ -1,6 +1,6 @@
 'use client';
 
-import { updateChatVisibility } from '@/app/(chat)/actions';
+// import { updateChatVisibility } from '@/app/(chat)/actions';
 import { VisibilityType } from '@/components/visibility-selector';
 import { Chat } from '@/lib/db/schema';
 import { useMemo } from 'react';
@@ -52,10 +52,12 @@ export function useChatVisibility({
       { revalidate: false },
     );
 
-    updateChatVisibility({
-      chatId: chatId,
-      visibility: updatedVisibilityType,
-    });
+    // TODO: 实现通过外部API更新对话可见性的功能
+    // updateChatVisibility({
+    //   chatId: chatId,
+    //   visibility: updatedVisibilityType,
+    // });
+    console.warn('updateChatVisibility not implemented with external API');
   };
 
   return { visibilityType, setVisibilityType };

@@ -1,8 +1,14 @@
 import 'server-only';
 
 import { eq } from 'drizzle-orm';
-import { db } from './drizzle';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
 import { user, type User } from './user-schema';
+
+// 创建数据库连接
+// biome-ignore lint/style/noNonNullAssertion: <explanation>
+const client = postgres(process.env.POSTGRES_URL!);
+const db = drizzle(client);
 
 // 通过ID查询用户
 export async function getUserById(id: string): Promise<Array<User>> {

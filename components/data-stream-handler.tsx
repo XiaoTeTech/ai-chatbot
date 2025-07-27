@@ -17,8 +17,9 @@ export type DataStreamDelta = {
     | 'suggestion'
     | 'clear'
     | 'finish'
-    | 'kind';
-  content: string | Suggestion;
+    | 'kind'
+    | 'conversation_id';
+  content: string | Suggestion | number;
 };
 
 export function DataStreamHandler({ id }: { id: string }) {

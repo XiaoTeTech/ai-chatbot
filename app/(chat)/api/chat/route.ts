@@ -101,12 +101,23 @@ export async function POST(request: Request) {
         const reader = streamResponse.getReader();
         const decoder = new TextDecoder();
         const encoder = new TextEncoder();
+        let realConversationId: number | null = null;
 
         try {
           while (true) {
             const { done, value } = await reader.read();
             if (done) {
               console.log('🏁 Stream finished');
+              // 在流结束时发送真实的 conversation_id
+              if (realConversationId) {
+                const conversationData = {
+                  type: 'conversation_id',
+                  content: realConversationId,
+                };
+                controller.enqueue(
+                  encoder.encode(`2:${JSON.stringify(conversationData)}\n`),
+                );
+              }
               break;
             }
 
@@ -120,10 +131,18 @@ export async function POST(request: Request) {
                   if (jsonStr) {
                     const data = JSON.parse(jsonStr);
 
+                    // 提取真实的 conversation_id
+                    if (data.conversation_id && !realConversationId) {
+                      realConversationId = data.conversation_id;
+                      console.log(
+                        '🆔 Real conversation ID:',
+                        realConversationId,
+                      );
+                    }
+
                     // 提取消息内容
                     if (data.choices?.[0]?.delta?.content) {
                       const content = data.choices[0].delta.content;
-                      console.log('📝 Streaming content:', content);
 
                       // AI SDK期望的格式：每个内容块作为单独的数据块
                       controller.enqueue(

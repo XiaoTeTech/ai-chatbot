@@ -40,7 +40,7 @@ function PureSuggestedActions({ append, chatId }: SuggestedActionsProps) {
       return;
     }
 
-    window.history.replaceState({}, '', `/chat/${chatId}`);
+    // 直接发送消息，让系统自动处理 conversation_id 的更新
     append({
       role: 'user',
       content: action,

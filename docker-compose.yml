@@ -2,7 +2,7 @@ version: '3'
 
 services:
   ai-chatbot:
-    build: .
+    image: ai-chatbot:latest # 使用本地构建并传输的镜像
     env_file:
       - .env
     ports:

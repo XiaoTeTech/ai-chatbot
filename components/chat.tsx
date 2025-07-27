@@ -427,7 +427,9 @@ export function Chat({
 
     if (isLoading) {
       // 触发停止按钮的提示显示
-      const tooltip = document.querySelector('[data-testid="stop-tooltip"]') as HTMLElement;
+      const tooltip = document.querySelector(
+        '[data-testid="stop-tooltip"]',
+      ) as HTMLElement;
       if (tooltip) {
         tooltip.setAttribute('data-show-tooltip', 'true');
         setTimeout(() => {
@@ -650,7 +652,9 @@ export function Chat({
 
     if (isLoading) {
       // 触发停止按钮的提示显示
-      const tooltip = document.querySelector('[data-testid="stop-tooltip"]') as HTMLElement;
+      const tooltip = document.querySelector(
+        '[data-testid="stop-tooltip"]',
+      ) as HTMLElement;
       if (tooltip) {
         tooltip.setAttribute('data-show-tooltip', 'true');
         setTimeout(() => {
@@ -818,120 +822,109 @@ export function Chat({
           session={session}
         />
         <div className="mx-auto px-4 bg-background pb-4 md:pb-6 gap-2 w-full md:max-w-3xl">
-          {/* 停止生成按钮 - 显示在输入框上方 */}
-          {isLoading && (
-            <div className="flex justify-center mb-2">
-              <button
-                type="button"
-                onClick={stop}
-                className="inline-flex items-center justify-center rounded-full w-8 h-8 bg-blue-500 text-white hover:bg-blue-600 transition-colors"
-                title="停止生成"
-              >
-                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                  <rect x="4" y="4" width="16" height="16" rx="2" />
-                </svg>
-              </button>
-            </div>
-          )}
-
           <form onSubmit={handleSubmit}>
             <div className="relative flex items-end gap-2 p-3 border border-input rounded-xl bg-background focus-within:border-ring">
-            <div className="flex-1 min-h-[60px] flex items-center">
-              <textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSubmit(e);
-                  }
-                }}
-                placeholder="你想了解什么"
-                rows={2}
-                className="w-full resize-none border-0 bg-transparent px-4 py-3 text-base placeholder:text-muted-foreground focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                style={{
-                  minHeight: '60px',
-                  maxHeight: '240px',
-                  height: 'auto',
-                }}
-                onInput={(e) => {
-                  const target = e.target as HTMLTextAreaElement;
-                  target.style.height = 'auto';
-                  target.style.height = `${Math.min(target.scrollHeight, 240)}px`;
-                }}
-              />
-            </div>
+              <div className="flex-1 min-h-[60px] flex items-center">
+                <textarea
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSubmit(e);
+                    }
+                  }}
+                  placeholder="你想了解什么"
+                  rows={2}
+                  className="w-full resize-none border-0 bg-transparent px-4 py-3 text-base placeholder:text-muted-foreground focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                  style={{
+                    minHeight: '60px',
+                    maxHeight: '240px',
+                    height: 'auto',
+                  }}
+                  onInput={(e) => {
+                    const target = e.target as HTMLTextAreaElement;
+                    target.style.height = 'auto';
+                    target.style.height = `${Math.min(target.scrollHeight, 240)}px`;
+                  }}
+                />
+              </div>
 
-            <div className="flex gap-1">
-              {isLoading ? (
-                <div className="relative">
+              <div className="flex gap-1">
+                {isLoading ? (
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={stop}
+                      data-testid="stop-button"
+                      className="inline-flex items-center justify-center rounded-full w-8 h-8 bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+                      title="停止生成"
+                    >
+                      <svg
+                        className="w-3 h-3"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <rect x="4" y="4" width="16" height="16" rx="2" />
+                      </svg>
+                    </button>
+                    {/* Tooltip */}
+                    <div
+                      data-testid="stop-tooltip"
+                      className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded whitespace-nowrap opacity-0 pointer-events-none transition-opacity duration-200 data-[show-tooltip]:opacity-100"
+                    >
+                      停止生成
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-black"></div>
+                    </div>
+                  </div>
+                ) : (
                   <button
-                    type="button"
-                    onClick={stop}
-                    data-testid="stop-button"
-                    className="inline-flex items-center justify-center rounded-full w-8 h-8 bg-blue-500 text-white hover:bg-blue-600 transition-colors"
-                    title="停止生成"
+                    type="submit"
+                    disabled={!input.trim()}
+                    className="inline-flex items-center justify-center rounded-lg w-8 h-8 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    title="发送消息"
                   >
-                    <svg
-                      className="w-3 h-3"
-                      fill="currentColor"
-                      viewBox="0 0 24 24"
+                    <div
+                      className="ds-icon"
+                      style={{
+                        fontSize: '16px',
+                        width: '16px',
+                        height: '16px',
+                      }}
                     >
-                      <rect x="4" y="4" width="16" height="16" rx="2" />
-                    </svg>
+                      <svg
+                        width="14"
+                        height="16"
+                        viewBox="0 0 14 16"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          clipRule="evenodd"
+                          d="M7 16c-.595 0-1.077-.462-1.077-1.032V1.032C5.923.462 6.405 0 7 0s1.077.462 1.077 1.032v13.936C8.077 15.538 7.595 16 7 16z"
+                          fill="currentColor"
+                        ></path>
+                        <path
+                          fillRule="evenodd"
+                          clipRule="evenodd"
+                          d="M.315 7.44a1.002 1.002 0 0 1 0-1.46L6.238.302a1.11 1.11 0 0 1 1.523 0c.421.403.421 1.057 0 1.46L1.838 7.44a1.11 1.11 0 0 1-1.523 0z"
+                          fill="currentColor"
+                        ></path>
+                        <path
+                          fillRule="evenodd"
+                          clipRule="evenodd"
+                          d="M13.685 7.44a1.11 1.11 0 0 1-1.523 0L6.238 1.762a1.002 1.002 0 0 1 0-1.46 1.11 1.11 0 0 1 1.523 0l5.924 5.678c.42.403.42 1.056 0 1.46z"
+                          fill="currentColor"
+                        ></path>
+                      </svg>
+                    </div>
                   </button>
-                  {/* Tooltip */}
-                  <div
-                    data-testid="stop-tooltip"
-                    className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded whitespace-nowrap opacity-0 pointer-events-none transition-opacity duration-200 data-[show-tooltip]:opacity-100"
-                  >
-                    停止生成
-                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-black"></div>
-                  </div>
-                </div>
-              ) : (
-                <button
-                  type="submit"
-                  disabled={!input.trim()}
-                  className="inline-flex items-center justify-center rounded-lg w-8 h-8 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  title="发送消息"
-                >
-                  <div
-                    className="ds-icon"
-                    style={{ fontSize: '16px', width: '16px', height: '16px' }}
-                  >
-                    <svg
-                      width="14"
-                      height="16"
-                      viewBox="0 0 14 16"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        clipRule="evenodd"
-                        d="M7 16c-.595 0-1.077-.462-1.077-1.032V1.032C5.923.462 6.405 0 7 0s1.077.462 1.077 1.032v13.936C8.077 15.538 7.595 16 7 16z"
-                        fill="currentColor"
-                      ></path>
-                      <path
-                        fillRule="evenodd"
-                        clipRule="evenodd"
-                        d="M.315 7.44a1.002 1.002 0 0 1 0-1.46L6.238.302a1.11 1.11 0 0 1 1.523 0c.421.403.421 1.057 0 1.46L1.838 7.44a1.11 1.11 0 0 1-1.523 0z"
-                        fill="currentColor"
-                      ></path>
-                      <path
-                        fillRule="evenodd"
-                        clipRule="evenodd"
-                        d="M13.685 7.44a1.11 1.11 0 0 1-1.523 0L6.238 1.762a1.002 1.002 0 0 1 0-1.46 1.11 1.11 0 0 1 1.523 0l5.924 5.678c.42.403.42 1.056 0 1.46z"
-                        fill="currentColor"
-                      ></path>
-                    </svg>
-                  </div>
-                </button>
-              )}
+                )}
+              </div>
             </div>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
     </>
   );

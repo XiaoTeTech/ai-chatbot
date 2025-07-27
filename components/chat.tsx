@@ -404,8 +404,8 @@ export function Chat({
           onSubmit={handleSubmit}
           className="mx-auto px-4 bg-background pb-4 md:pb-6 gap-2 w-full md:max-w-3xl"
         >
-          <div className="relative flex items-end gap-2 p-2 border border-input rounded-xl bg-background focus-within:border-ring">
-            <div className="flex-1 min-h-[44px] flex items-center">
+          <div className="relative flex items-end gap-2 p-3 border border-input rounded-xl bg-background focus-within:border-ring">
+            <div className="flex-1 min-h-[60px] flex items-center">
               <textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
@@ -417,17 +417,17 @@ export function Chat({
                 }}
                 placeholder="你想了解什么"
                 disabled={isLoading}
-                rows={1}
-                className="w-full resize-none border-0 bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                rows={2}
+                className="w-full resize-none border-0 bg-transparent px-4 py-3 text-base placeholder:text-muted-foreground focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                 style={{
-                  minHeight: '44px',
-                  maxHeight: '200px',
+                  minHeight: '60px',
+                  maxHeight: '240px',
                   height: 'auto',
                 }}
                 onInput={(e) => {
                   const target = e.target as HTMLTextAreaElement;
                   target.style.height = 'auto';
-                  target.style.height = `${Math.min(target.scrollHeight, 200)}px`;
+                  target.style.height = `${Math.min(target.scrollHeight, 240)}px`;
                 }}
               />
             </div>
@@ -472,26 +472,6 @@ export function Chat({
               )}
             </div>
           </div>
-
-          {isLoading && (
-            <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
-              <div className="flex gap-1">
-                <div
-                  className="w-1 h-1 bg-current rounded-full animate-bounce"
-                  style={{ animationDelay: '0ms' }}
-                />
-                <div
-                  className="w-1 h-1 bg-current rounded-full animate-bounce"
-                  style={{ animationDelay: '150ms' }}
-                />
-                <div
-                  className="w-1 h-1 bg-current rounded-full animate-bounce"
-                  style={{ animationDelay: '300ms' }}
-                />
-              </div>
-              <span>AI 正在回复...</span>
-            </div>
-          )}
         </form>
       </div>
     </>

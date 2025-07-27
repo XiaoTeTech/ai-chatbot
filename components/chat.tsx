@@ -838,15 +838,15 @@ export function Chat({
                 <button
                   type="button"
                   onClick={stop}
-                  className="inline-flex items-center justify-center rounded-lg w-8 h-8 bg-red-500 text-white hover:bg-red-600 transition-colors"
+                  className="inline-flex items-center justify-center rounded-full w-8 h-8 bg-blue-500 text-white hover:bg-blue-600 transition-colors"
                   title="停止生成"
                 >
                   <svg
-                    className="w-4 h-4"
+                    className="w-3 h-3"
                     fill="currentColor"
                     viewBox="0 0 24 24"
                   >
-                    <rect x="6" y="6" width="12" height="12" rx="2" />
+                    <rect x="4" y="4" width="16" height="16" rx="2" />
                   </svg>
                 </button>
               ) : (
@@ -856,19 +856,37 @@ export function Chat({
                   className="inline-flex items-center justify-center rounded-lg w-8 h-8 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   title="发送消息"
                 >
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                  <div
+                    className="ds-icon"
+                    style={{ fontSize: '16px', width: '16px', height: '16px' }}
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-                    />
-                  </svg>
+                    <svg
+                      width="14"
+                      height="16"
+                      viewBox="0 0 14 16"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        clipRule="evenodd"
+                        d="M7 16c-.595 0-1.077-.462-1.077-1.032V1.032C5.923.462 6.405 0 7 0s1.077.462 1.077 1.032v13.936C8.077 15.538 7.595 16 7 16z"
+                        fill="currentColor"
+                      ></path>
+                      <path
+                        fillRule="evenodd"
+                        clipRule="evenodd"
+                        d="M.315 7.44a1.002 1.002 0 0 1 0-1.46L6.238.302a1.11 1.11 0 0 1 1.523 0c.421.403.421 1.057 0 1.46L1.838 7.44a1.11 1.11 0 0 1-1.523 0z"
+                        fill="currentColor"
+                      ></path>
+                      <path
+                        fillRule="evenodd"
+                        clipRule="evenodd"
+                        d="M13.685 7.44a1.11 1.11 0 0 1-1.523 0L6.238 1.762a1.002 1.002 0 0 1 0-1.46 1.11 1.11 0 0 1 1.523 0l5.924 5.678c.42.403.42 1.056 0 1.46z"
+                        fill="currentColor"
+                      ></path>
+                    </svg>
+                  </div>
                 </button>
               )}
             </div>

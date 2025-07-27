@@ -71,7 +71,7 @@ export function transformChatHistoryToDBMessage(
 // 将外部API的聊天历史列表转换为本地DBMessage数组
 export function transformChatHistoryToDBMessages(
   response: ChatHistoryPaginatedResponse,
-): DBMessage[] {
+): (DBMessage & { vote_status?: string | null })[] {
   console.log(
     '🔍 Raw external API response items:',
     response.items.map((item) => ({
@@ -148,8 +148,8 @@ export function transformDBMessageToUIMessage(
 
 // 将DBMessage数组转换为UIMessage数组
 export function transformDBMessagesToUIMessages(
-  dbMessages: DBMessage[],
-): UIMessage[] {
+  dbMessages: (DBMessage & { vote_status?: string | null })[],
+): (UIMessage & { vote_status?: string | null })[] {
   return dbMessages.map(transformDBMessageToUIMessage);
 }
 

@@ -71,8 +71,63 @@ export async function POST(request: Request) {
       },
     );
 
-    // 直接返回外部API的流式响应
-    return new Response(streamResponse, {
+    // 创建转换流，将外部API的流式响应转换为前端期望的格式
+    const transformedStream = new ReadableStream({
+      async start(controller) {
+        const reader = streamResponse.getReader();
+        const decoder = new TextDecoder();
+
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split('\n');
+
+            for (const line of lines) {
+              if (line.startsWith('data:') && !line.includes('[DONE]')) {
+                try {
+                  const jsonStr = line.substring(5).trim();
+                  if (jsonStr) {
+                    const data = JSON.parse(jsonStr);
+
+                    // 提取消息内容
+                    if (
+                      data.choices &&
+                      data.choices[0] &&
+                      data.choices[0].delta &&
+                      data.choices[0].delta.content
+                    ) {
+                      const content = data.choices[0].delta.content;
+
+                      // 转换为前端期望的格式
+                      const transformedData = {
+                        type: 'text-delta',
+                        content: content,
+                      };
+
+                      controller.enqueue(
+                        `data: ${JSON.stringify(transformedData)}\n\n`,
+                      );
+                    }
+                  }
+                } catch (e) {
+                  // 忽略解析错误，继续处理下一行
+                  console.warn('Failed to parse streaming data:', line);
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Stream processing error:', error);
+        } finally {
+          controller.close();
+        }
+      },
+    });
+
+    return new Response(transformedStream, {
       headers: {
         'Content-Type': 'text/plain; charset=utf-8',
         'Transfer-Encoding': 'chunked',

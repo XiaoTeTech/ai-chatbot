@@ -32,6 +32,12 @@ export async function POST(request: Request) {
       return new Response('Missing LC Session Token', { status: 401 });
     }
 
+    console.log('LLM Chat Request - User ID:', session.user.id);
+    console.log(
+      'LLM Chat Request - LC Session Token:',
+      session.user.lcSessionToken?.substring(0, 10) + '...',
+    );
+
     const userMessage = getMostRecentUserMessage(messages);
 
     if (!userMessage) {
@@ -51,8 +57,8 @@ export async function POST(request: Request) {
       content: typeof msg.content === 'string' ? msg.content : '',
     }));
 
-    // 确定使用的模型
-    const modelName = isSuggestedAction ? 'suggested-model' : selectedChatModel;
+    // 确定使用的模型 - 根据Python示例使用gpt-3.5-turbo
+    const modelName = isSuggestedAction ? 'gpt-3.5-turbo' : 'gpt-3.5-turbo';
 
     // 调用外部LLM API进行流式聊天
     const streamResponse = await externalChatService.chatCompletionStream(

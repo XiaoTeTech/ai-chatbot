@@ -16,8 +16,8 @@ type SimpleUIMessage = {
   createdAt?: Date;
 };
 
-// 简单的消息显示组件
-function SimpleMessages({
+// 高仿原版的消息显示组件
+function BeautifulMessages({
   messages,
   isLoading,
 }: {
@@ -25,30 +25,88 @@ function SimpleMessages({
   isLoading: boolean;
 }) {
   return (
-    <div className="flex-1 overflow-y-auto px-4">
-      {messages.map((message) => (
-        <div
-          key={message.id}
-          className={`mb-4 ${message.role === 'user' ? 'text-right' : 'text-left'}`}
-        >
-          <div
-            className={`inline-block p-3 rounded-lg max-w-[80%] ${
-              message.role === 'user'
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-100 text-gray-900'
-            }`}
-          >
-            {typeof message.content === 'string' ? message.content : ''}
-          </div>
-        </div>
-      ))}
-      {isLoading && (
-        <div className="text-left mb-4">
-          <div className="inline-block p-3 rounded-lg bg-gray-100">
-            <div className="animate-pulse">正在思考...</div>
+    <div className="flex flex-col min-w-0 gap-6 flex-1 overflow-y-scroll pt-4">
+      {messages.length === 0 && (
+        <div className="mx-auto max-w-3xl px-4">
+          <div className="flex flex-col gap-4 text-center">
+            <h1 className="text-2xl font-semibold">欢迎使用 AI 助手</h1>
+            <p className="text-muted-foreground">开始对话吧！</p>
           </div>
         </div>
       )}
+
+      {messages.map((message, index) => (
+        <div
+          key={message.id}
+          className="w-full mx-auto max-w-3xl px-4 group/message"
+          data-role={message.role}
+        >
+          <div
+            className={`flex gap-4 ${
+              message.role === 'user' ? 'flex-row-reverse' : 'flex-row'
+            }`}
+          >
+            <div
+              className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                message.role === 'user'
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-100 text-gray-700'
+              }`}
+            >
+              {message.role === 'user' ? 'U' : 'AI'}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div
+                className={`prose prose-sm max-w-none ${
+                  message.role === 'user' ? 'text-right' : 'text-left'
+                }`}
+              >
+                <div className="whitespace-pre-wrap break-words">
+                  {message.content}
+                  {isLoading &&
+                    index === messages.length - 1 &&
+                    message.role === 'assistant' && (
+                      <span className="inline-block w-2 h-4 bg-gray-400 animate-pulse ml-1" />
+                    )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+
+      {isLoading &&
+        messages.length > 0 &&
+        messages[messages.length - 1].role === 'user' && (
+          <div className="w-full mx-auto max-w-3xl px-4">
+            <div className="flex gap-4">
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-100 text-gray-700 flex items-center justify-center text-sm font-medium">
+                AI
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <div className="flex gap-1">
+                    <div
+                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                      style={{ animationDelay: '0ms' }}
+                    />
+                    <div
+                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                      style={{ animationDelay: '150ms' }}
+                    />
+                    <div
+                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                      style={{ animationDelay: '300ms' }}
+                    />
+                  </div>
+                  <span className="text-sm">正在思考...</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+      <div className="shrink-0 min-w-[24px] min-h-[24px]" />
     </div>
   );
 }
@@ -224,37 +282,99 @@ export function Chat({
           selectedVisibilityType={selectedVisibilityType}
           isReadonly={isReadonly}
         />
-        <SimpleMessages messages={messages} isLoading={isLoading} />
+        <BeautifulMessages messages={messages} isLoading={isLoading} />
         <form
           onSubmit={handleSubmit}
           className="mx-auto px-4 bg-background pb-4 md:pb-6 gap-2 w-full md:max-w-3xl"
         >
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="输入消息..."
-              disabled={isLoading}
-              className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <button
-              type="submit"
-              disabled={isLoading || !input.trim()}
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? '发送中...' : '发送'}
-            </button>
-            {isLoading && (
-              <button
-                type="button"
-                onClick={stop}
-                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
-              >
-                停止
-              </button>
-            )}
+          <div className="relative flex items-end gap-2 p-2 border border-input rounded-xl bg-background focus-within:border-ring">
+            <div className="flex-1 min-h-[44px] flex items-center">
+              <textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSubmit(e);
+                  }
+                }}
+                placeholder="输入消息... (Shift+Enter 换行)"
+                disabled={isLoading}
+                rows={1}
+                className="w-full resize-none border-0 bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                style={{
+                  minHeight: '44px',
+                  maxHeight: '200px',
+                  height: 'auto',
+                }}
+                onInput={(e) => {
+                  const target = e.target as HTMLTextAreaElement;
+                  target.style.height = 'auto';
+                  target.style.height = `${Math.min(target.scrollHeight, 200)}px`;
+                }}
+              />
+            </div>
+
+            <div className="flex gap-1">
+              {isLoading ? (
+                <button
+                  type="button"
+                  onClick={stop}
+                  className="inline-flex items-center justify-center rounded-lg w-8 h-8 bg-red-500 text-white hover:bg-red-600 transition-colors"
+                  title="停止生成"
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <rect x="6" y="6" width="12" height="12" rx="2" />
+                  </svg>
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  disabled={!input.trim()}
+                  className="inline-flex items-center justify-center rounded-lg w-8 h-8 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  title="发送消息"
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                    />
+                  </svg>
+                </button>
+              )}
+            </div>
           </div>
+
+          {isLoading && (
+            <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
+              <div className="flex gap-1">
+                <div
+                  className="w-1 h-1 bg-current rounded-full animate-bounce"
+                  style={{ animationDelay: '0ms' }}
+                />
+                <div
+                  className="w-1 h-1 bg-current rounded-full animate-bounce"
+                  style={{ animationDelay: '150ms' }}
+                />
+                <div
+                  className="w-1 h-1 bg-current rounded-full animate-bounce"
+                  style={{ animationDelay: '300ms' }}
+                />
+              </div>
+              <span>AI 正在回复...</span>
+            </div>
+          )}
         </form>
       </div>
     </>

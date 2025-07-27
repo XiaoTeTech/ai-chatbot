@@ -30,11 +30,11 @@ export const {
   providers: [
     Credentials({
       credentials: {
-        phone: { label: "Phone", type: "text" },
-        code: { label: "Code", type: "text" }
+        phone: { label: 'Phone', type: 'text' },
+        code: { label: 'Code', type: 'text' },
       },
       async authorize(credentials): Promise<ExtendedUser | null> {
-        const { phone, code } = credentials as { phone: string, code: string };
+        const { phone, code } = credentials as { phone: string; code: string };
 
         try {
           const response = await fetch('https://lcen.xiaote.net/api/graphql/', {
@@ -42,7 +42,7 @@ export const {
             headers: {
               'Content-Type': 'application/json;charset=UTF-8',
               'app-platform': 'web',
-              'app-version': '0.0.1'
+              'app-version': '0.0.1',
             },
             body: JSON.stringify({
               query: `mutation {
@@ -54,8 +54,8 @@ export const {
                     avatarUrl
                   }
                 }
-              }`
-            })
+              }`,
+            }),
           });
 
           const data = await response.json();
@@ -70,14 +70,19 @@ export const {
           const lcSessionToken = data.data.loginBySms.sessionToken;
 
           console.log('创建或更新用户...');
-          const { user } = await createOrUpdateUserByLcUserId(lcUserId, avatarUrl, nickname, lcSessionToken);
+          const { user } = await createOrUpdateUserByLcUserId(
+            lcUserId,
+            avatarUrl,
+            nickname,
+            lcSessionToken,
+          );
           console.log('用户创建/更新结果:', user);
 
           const userData = {
             id: user?.id,
             name: user?.nickname,
             image: user?.avatarUrl,
-            lcSessionToken: user?.lcSessionToken
+            lcSessionToken: user?.lcSessionToken,
           };
           return userData;
         } catch (error) {
@@ -92,8 +97,12 @@ export const {
     signIn: '/',
   },
   session: {
-    strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    strategy: 'jwt',
+    maxAge: 365 * 24 * 60 * 60, // 365 days (1 year) - effectively never expires unless manually logged out
+    updateAge: 24 * 60 * 60, // Update session every 24 hours to keep it fresh
+  },
+  jwt: {
+    maxAge: 365 * 24 * 60 * 60, // JWT token also lasts 1 year
   },
   cookies: {
     sessionToken: {
@@ -102,7 +111,8 @@ export const {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
-        secure: false,
+        secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
+        maxAge: 365 * 24 * 60 * 60, // Cookie also expires in 1 year
       },
     },
   },
@@ -112,21 +122,24 @@ export const {
         const extendedUser = user as ExtendedUser;
         token.id = extendedUser.id;
         token.name = extendedUser.name;
-        if (extendedUser.lcSessionToken){
+        if (extendedUser.lcSessionToken) {
           token.lcSessionToken = extendedUser.lcSessionToken;
         }
         token.picture = extendedUser.image;
       }
       return token as ExtendedToken;
     },
-    async session({ session, token }: { session: ExtendedSession; token: ExtendedToken }) {
-      if (session.user){
+    async session({
+      session,
+      token,
+    }: { session: ExtendedSession; token: ExtendedToken }) {
+      if (session.user) {
         session.user.id = token.id;
-        if (token.lcSessionToken){
+        if (token.lcSessionToken) {
           session.user.lcSessionToken = token.lcSessionToken;
         }
       }
       return session;
     },
   },
-});    
+});

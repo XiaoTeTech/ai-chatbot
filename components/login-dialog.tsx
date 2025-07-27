@@ -130,16 +130,32 @@ export function LoginDialog() {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div 
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      data-testid="login-dialog"
+    >
+      <div
         className="fixed inset-0 bg-black/30 backdrop-blur-sm transition-opacity"
         onClick={close}
       />
       <div className="relative bg-background/80 backdrop-blur-md rounded-2xl shadow-2xl p-8 w-full max-w-md mx-4 transition-all border border-white/10">
         <div className="absolute right-4 top-4">
-          <button onClick={close} className="text-gray-400 hover:text-gray-600 transition-colors">
-            <svg className="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          <button
+            onClick={close}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <svg
+              className="size-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
@@ -149,7 +165,10 @@ export function LoginDialog() {
         </div>
         <div className="flex flex-col gap-4 w-full">
           <div className="space-y-2">
-            <label htmlFor="phone" className="text-sm font-medium text-foreground">
+            <label
+              htmlFor="phone"
+              className="text-sm font-medium text-foreground"
+            >
               手机号
             </label>
             <Input
@@ -165,7 +184,10 @@ export function LoginDialog() {
             />
           </div>
           <div className="space-y-2">
-            <label htmlFor="code" className="text-sm font-medium text-foreground">
+            <label
+              htmlFor="code"
+              className="text-sm font-medium text-foreground"
+            >
               验证码
             </label>
             <div className="flex gap-2">
@@ -181,11 +203,19 @@ export function LoginDialog() {
               <Button
                 type="button"
                 onClick={sendVerificationCode}
-                disabled={countdown > 0 || !phone.match(/^(\+86)?1[3-9]\d{9}$/) || isSending}
+                disabled={
+                  countdown > 0 ||
+                  !phone.match(/^(\+86)?1[3-9]\d{9}$/) ||
+                  isSending
+                }
                 variant="outline"
                 className="h-11 px-4 whitespace-nowrap border-input hover:bg-accent hover:text-accent-foreground transition-colors"
               >
-                {isSending ? '发送中...' : countdown > 0 ? `${countdown}s` : '发送验证码'}
+                {isSending
+                  ? '发送中...'
+                  : countdown > 0
+                    ? `${countdown}s`
+                    : '发送验证码'}
               </Button>
             </div>
           </div>

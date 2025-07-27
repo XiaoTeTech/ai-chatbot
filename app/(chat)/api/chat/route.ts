@@ -26,31 +26,14 @@ export async function POST(request: Request) {
       selectedChatModel: string;
     } = requestBody;
 
-    console.log(
-      '🔍 Parsed request - ID:',
-      id,
-      'Messages count:',
-      messages?.length,
-      'Model:',
-      selectedChatModel,
-    );
-
     const session = await auth();
-    console.log(
-      '👤 Session check - User ID:',
-      session?.user?.id,
-      'Has lcSessionToken:',
-      !!session?.user?.lcSessionToken,
-    );
 
     if (!session || !session.user || !session.user.id) {
-      console.log('❌ Unauthorized - No session or user');
       return new Response('Unauthorized', { status: 401 });
     }
 
     // 检查是否有lcSessionToken
     if (!session.user.lcSessionToken) {
-      console.log('❌ Missing LC Session Token');
       return new Response('Missing LC Session Token', { status: 401 });
     }
 

@@ -2,7 +2,7 @@
 
 import type { Attachment, UIMessage } from 'ai';
 import { useChat } from '@ai-sdk/react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
 import { ChatHeader } from '@/components/chat-header';
 import type { Vote } from '@/lib/db/schema';
@@ -14,7 +14,6 @@ import { VisibilityType } from './visibility-selector';
 import { useArtifactSelector } from '@/hooks/use-artifact';
 import { toast } from 'sonner';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
 import { useLoginDialog } from '@/lib/context';
 
 export function Chat({
@@ -32,7 +31,6 @@ export function Chat({
 }) {
   const { mutate } = useSWRConfig();
   const { data: session } = useSession();
-  const router = useRouter();
   const { open } = useLoginDialog();
 
   const {
@@ -45,7 +43,6 @@ export function Chat({
     status,
     stop,
     reload,
-    data,
   } = useChat({
     id,
     body: { id, selectedChatModel: selectedChatModel },
@@ -62,29 +59,6 @@ export function Chat({
       toast.error('出问题啦，请再试一次！');
     },
   });
-
-  // 监听数据流中的 conversation_id
-  useEffect(() => {
-    if (data && Array.isArray(data)) {
-      const conversationIdData = data.find(
-        (item: any) => item?.type === 'conversation_id',
-      );
-
-      if (
-        conversationIdData &&
-        typeof conversationIdData === 'object' &&
-        'content' in conversationIdData
-      ) {
-        const realConversationId = (conversationIdData as any).content;
-        console.log('🆔 Received real conversation ID:', realConversationId);
-
-        // 如果当前 URL 中的 ID 不是真实的 conversation_id，则更新 URL
-        if (id !== realConversationId.toString()) {
-          router.replace(`/chat/${realConversationId}`);
-        }
-      }
-    }
-  }, [data, id, router]);
 
   const { data: votes } = useSWR<Array<Vote>>(
     messages.length >= 2 ? `/api/vote?chatId=${id}` : null,

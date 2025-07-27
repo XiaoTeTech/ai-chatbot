@@ -4,6 +4,7 @@ import { Chat } from '@/components/chat';
 import { DEFAULT_CHAT_MODEL } from '@/lib/ai/models';
 import { generateUUID } from '@/lib/utils';
 import { DataStreamHandler } from '@/components/data-stream-handler';
+import { ConversationIdHandler } from '@/components/conversation-id-handler';
 
 export default async function Page() {
   const id = generateUUID();
@@ -23,6 +24,7 @@ export default async function Page() {
           isReadonly={false}
         />
         <DataStreamHandler id={id} />
+        <ConversationIdHandler chatId={id} />
       </>
     );
   }
@@ -38,6 +40,7 @@ export default async function Page() {
         isReadonly={false}
       />
       <DataStreamHandler id={id} />
+      <ConversationIdHandler chatId={id} />
     </>
   );
 }

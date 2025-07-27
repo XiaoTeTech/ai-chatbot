@@ -14,7 +14,6 @@ export async function POST(request: Request) {
 
   try {
     const requestBody = await request.json();
-    console.log('📝 Request body:', JSON.stringify(requestBody, null, 2));
 
     const {
       id,
@@ -65,14 +64,6 @@ export async function POST(request: Request) {
 
     // 确定使用的模型 - 根据Python示例使用gpt-3.5-turbo
     const modelName = isSuggestedAction ? 'gpt-3.5-turbo' : 'gpt-3.5-turbo';
-
-    console.log('🎯 Starting LLM API call with model:', modelName);
-    console.log(
-      '💬 External messages:',
-      JSON.stringify(externalMessages, null, 2),
-    );
-
-    console.log('🔄 Calling external LLM API...');
 
     // 调用外部LLM API进行流式聊天
     const streamResponse = await externalChatService.chatCompletionStream(

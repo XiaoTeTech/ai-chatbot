@@ -4,11 +4,10 @@ import {
   wrapLanguageModel,
 } from 'ai';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
-import { auth } from "@/app/(auth)/auth";
+import { auth } from '@/app/(auth)/auth';
 import type { ExtendedUser } from '@/app/(auth)/auth';
 import { cache } from 'react';
-import { headers } from "next/headers";
-
+import { headers } from 'next/headers';
 
 const getAuthSession = cache(async () => {
   const session = await auth();
@@ -17,14 +16,22 @@ const getAuthSession = cache(async () => {
 
 const createMyProvider = async (token: string) => {
   const headersList = await headers();
-  const clientIp = headersList.get('x-forwarded-for') || headersList.get('x-real-ip') || headersList.get('remote-addr') || '';
+  const clientIp =
+    headersList.get('x-forwarded-for') ||
+    headersList.get('x-real-ip') ||
+    headersList.get('remote-addr') ||
+    '';
   console.log('clientIp', clientIp);
 
   return createOpenAICompatible({
-    baseURL:   'https://uther.xiaote.net/v1',
+    baseURL: 'http://127.0.0.1:3003/v1',
     name: 'tesla',
-    apiKey:token,
-    headers: { is_from_web: 'true', 'X-Forwarded-For': clientIp || '', 'X-Real-IP': clientIp || '' }
+    apiKey: token,
+    headers: {
+      is_from_web: 'true',
+      'X-Forwarded-For': clientIp || '',
+      'X-Real-IP': clientIp || '',
+    },
   });
 };
 
@@ -33,7 +40,7 @@ const defaultQwenProvider = createOpenAICompatible({
     process.env.DASHSCOPE_API_KEY_BASE ||
     'https://dashscope.aliyuncs.com/api/v1',
   name: 'qwen',
-  apiKey: process.env.DASHSCOPE_API_KEY, 
+  apiKey: process.env.DASHSCOPE_API_KEY,
 });
 
 export async function myProvider() {

@@ -53,6 +53,11 @@ export function Chat({
     sendExtraMessageFields: true,
     onFinish: (message) => {
       console.log('🎉 Chat finished, mutating history');
+      console.log('🔍 onFinish message:', {
+        id: message.id,
+        role: message.role,
+        hasEncoding: message.id.includes(':-'),
+      });
       mutate('/api/history');
 
       // 如果当前是新对话（id === 'new'），尝试从消息ID中获取真实的conversation_id
@@ -81,6 +86,19 @@ export function Chat({
         response.status,
         response.statusText,
       );
+
+      // 读取消息元数据
+      const conversationId = response.headers.get('X-Conversation-Id');
+      const msgId = response.headers.get('X-Message-Id');
+
+      if (conversationId && msgId) {
+        const metadata = {
+          conversationId: Number.parseInt(conversationId),
+          msgId: Number.parseInt(msgId),
+        };
+        setLastMessageMetadata(metadata);
+        console.log('📋 收到消息元数据:', metadata);
+      }
     },
   });
 
@@ -90,6 +108,10 @@ export function Chat({
   );
 
   const [attachments, setAttachments] = useState<Array<Attachment>>([]);
+  const [lastMessageMetadata, setLastMessageMetadata] = useState<{
+    conversationId?: number;
+    msgId?: number;
+  }>({});
   const isArtifactVisible = useArtifactSelector((state) => state.isVisible);
 
   const handleMessageSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -119,6 +141,7 @@ export function Chat({
           reload={reload}
           isReadonly={isReadonly}
           isArtifactVisible={isArtifactVisible}
+          lastMessageMetadata={lastMessageMetadata}
         />
 
         <form

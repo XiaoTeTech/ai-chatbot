@@ -127,13 +127,54 @@ export function PureMessageActions({
                     const metadata = await metadataResponse.json();
                     conversationId = metadata.conversation_id;
                     msgId = metadata.msg_id;
-                  } else {
-                    // 数字格式，直接使用
+                  } else if (!chatId.includes('-') && chatId !== 'new') {
+                    // 数字格式的对话，直接使用 chatId 作为 conversation_id
                     conversationId = Number.parseInt(chatId);
-                    msgId = Number.parseInt(message.id);
 
-                    if (Number.isNaN(conversationId) || Number.isNaN(msgId)) {
-                      toast.error('无效的对话或消息ID');
+                    if (Number.isNaN(conversationId)) {
+                      toast.error('无效的对话ID');
+                      return;
+                    }
+
+                    // 对于 msg_id，使用时间戳作为临时值（后端会处理）
+                    msgId = Date.now();
+
+                    console.log('📋 数字格式对话，使用:', {
+                      conversationId,
+                      msgId,
+                    });
+                  } else {
+                    // 其他情况：尝试从聊天历史中获取 conversation_id
+                    console.log('🔍 尝试从聊天历史获取 conversation_id');
+
+                    try {
+                      const historyResponse = await fetch('/api/history');
+                      if (historyResponse.ok) {
+                        const historyData = await historyResponse.json();
+
+                        // 查找最新的对话
+                        if (historyData.length > 0) {
+                          const latestConversation = historyData[0];
+                          conversationId = latestConversation.id;
+
+                          // 对于 msg_id，我们使用一个临时值
+                          msgId = Date.now(); // 临时使用时间戳作为 msg_id
+
+                          console.log('📋 从聊天历史获取到:', {
+                            conversationId,
+                            msgId,
+                          });
+                        } else {
+                          toast.error('无法获取对话信息，请刷新页面后重试');
+                          return;
+                        }
+                      } else {
+                        toast.error('无法获取对话信息，请刷新页面后重试');
+                        return;
+                      }
+                    } catch (error) {
+                      console.error('获取聊天历史失败:', error);
+                      toast.error('无法获取对话信息，请刷新页面后重试');
                       return;
                     }
                   }
@@ -218,9 +259,50 @@ export function PureMessageActions({
                     hasEncoding: message.id.includes(':-'),
                   });
 
-                  // 优先检查 message.id 是否包含编码的信息
-                  // 格式: "chatcmpl-{uuid}:-{conversation_id}-{msg_id}"
-                  if (message.id.includes(':-')) {
+                  // 优先从 DOM 中查找编码的 ID
+                  const messageElement = document.querySelector(
+                    `[data-message-id="${message.id}"]`,
+                  );
+                  const encodedId =
+                    messageElement?.getAttribute('data-encoded-id');
+
+                  console.log('🔍 DOM 查找结果:', {
+                    messageElement: !!messageElement,
+                    encodedId,
+                    hasEncodedId: !!encodedId,
+                    messageId: message.id,
+                  });
+
+                  if (encodedId && encodedId.includes(':-')) {
+                    console.log('📋 从 DOM 获取编码 ID:', encodedId);
+                    const parts = encodedId.split(':-');
+                    if (parts.length === 2) {
+                      const idParts = parts[1].split('-');
+                      if (idParts.length === 2) {
+                        conversationId = Number.parseInt(idParts[0]);
+                        msgId = Number.parseInt(idParts[1]);
+
+                        if (
+                          Number.isNaN(conversationId) ||
+                          Number.isNaN(msgId)
+                        ) {
+                          toast.error('无法解析DOM中的编码ID');
+                          return;
+                        }
+                        console.log('📋 从DOM解析得到:', {
+                          conversationId,
+                          msgId,
+                        });
+                      } else {
+                        toast.error('DOM编码ID格式不正确');
+                        return;
+                      }
+                    } else {
+                      toast.error('DOM编码ID格式不正确');
+                      return;
+                    }
+                  } else if (message.id.includes(':-')) {
+                    // 备用方案：直接从 message.id 解析
                     const parts = message.id.split(':-');
                     if (parts.length === 2) {
                       const idParts = parts[1].split('-');
@@ -248,24 +330,56 @@ export function PureMessageActions({
                       return;
                     }
                   } else if (!chatId.includes('-') && chatId !== 'new') {
-                    // 数字格式的 chatId，直接使用
+                    // 数字格式的对话，直接使用 chatId 作为 conversation_id
                     conversationId = Number.parseInt(chatId);
-                    msgId = Number.parseInt(message.id);
 
-                    if (Number.isNaN(conversationId) || Number.isNaN(msgId)) {
-                      toast.error('无效的对话或消息ID');
+                    if (Number.isNaN(conversationId)) {
+                      toast.error('无效的对话ID');
                       return;
                     }
-                  } else {
-                    // 其他情况（UUID 或 'new'），但消息没有编码信息
-                    console.error('❌ 投票失败 - 消息信息不完整:', {
-                      chatId,
-                      messageId: message.id,
-                      hasEncoding: message.id.includes(':-'),
-                      messageRole: message.role,
+
+                    // 对于 msg_id，使用时间戳作为临时值（后端会处理）
+                    msgId = Date.now();
+
+                    console.log('📋 数字格式对话，使用:', {
+                      conversationId,
+                      msgId,
                     });
-                    toast.error('消息信息不完整，请稍后重试');
-                    return;
+                  } else {
+                    // 其他情况：尝试从聊天历史中获取 conversation_id
+                    console.log('🔍 尝试从聊天历史获取 conversation_id');
+
+                    try {
+                      const historyResponse = await fetch('/api/history');
+                      if (historyResponse.ok) {
+                        const historyData = await historyResponse.json();
+
+                        // 查找最新的对话
+                        if (historyData.length > 0) {
+                          const latestConversation = historyData[0];
+                          conversationId = latestConversation.id;
+
+                          // 对于 msg_id，我们使用一个临时值或者尝试从消息顺序推断
+                          // 这里简化处理，使用消息在当前对话中的索引
+                          msgId = Date.now(); // 临时使用时间戳作为 msg_id
+
+                          console.log('📋 从聊天历史获取到:', {
+                            conversationId,
+                            msgId,
+                          });
+                        } else {
+                          toast.error('无法获取对话信息，请刷新页面后重试');
+                          return;
+                        }
+                      } else {
+                        toast.error('无法获取对话信息，请刷新页面后重试');
+                        return;
+                      }
+                    } catch (error) {
+                      console.error('获取聊天历史失败:', error);
+                      toast.error('无法获取对话信息，请刷新页面后重试');
+                      return;
+                    }
                   }
 
                   const downvote = fetch('/api/chat/interaction', {

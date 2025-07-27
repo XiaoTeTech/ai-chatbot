@@ -98,6 +98,9 @@ export async function POST(request: Request) {
     // 创建转换流，将外部API的SSE格式转换为AI SDK期望的格式
     console.log('🔄 Creating transformed stream for AI SDK...');
 
+    let lastConversationId: number | null = null;
+    let lastMsgId: number | null = null;
+
     const transformedStream = new ReadableStream({
       async start(controller) {
         const reader = streamResponse.getReader();
@@ -127,8 +130,10 @@ export async function POST(request: Request) {
                       JSON.stringify(data, null, 2),
                     );
 
-                    // 提取真实的 conversation_id（仅用于日志）
+                    // 提取真实的 conversation_id 和 msg_id
                     if (data.conversation_id) {
+                      lastConversationId = data.conversation_id;
+                      lastMsgId = data.msg_id;
                       console.log(
                         '🆔 Real conversation ID:',
                         data.conversation_id,
@@ -169,12 +174,24 @@ export async function POST(request: Request) {
       },
     });
 
+    const responseHeaders: Record<string, string> = {
+      'Content-Type': 'text/plain; charset=utf-8',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+    };
+
+    // 添加消息元数据到响应头
+    if (lastConversationId && lastMsgId) {
+      responseHeaders['X-Conversation-Id'] = String(lastConversationId);
+      responseHeaders['X-Message-Id'] = String(lastMsgId);
+      console.log('📤 Adding headers:', {
+        conversationId: lastConversationId,
+        msgId: lastMsgId,
+      });
+    }
+
     return new Response(transformedStream, {
-      headers: {
-        'Content-Type': 'text/plain; charset=utf-8',
-        'Cache-Control': 'no-cache',
-        Connection: 'keep-alive',
-      },
+      headers: responseHeaders,
     });
   } catch (error) {
     console.error(error);

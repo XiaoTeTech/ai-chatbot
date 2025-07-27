@@ -48,6 +48,8 @@ const PurePreviewMessage = ({
         animate={{ y: 0, opacity: 1 }}
         exit={{ opacity: 0, transition: { duration: 0.2 } }} // 添加退出动画
         data-role={message.role}
+        data-message-id={message.id}
+        data-encoded-id={message.id.includes(':-') ? message.id : undefined}
       >
         <div
           className={cn(

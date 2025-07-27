@@ -1,4 +1,4 @@
-import { auth } from '@/app/(auth)/auth';
+import { auth, type ExtendedUser } from '@/app/(auth)/auth';
 import { externalChatService } from '@/lib/api/external-chat-service';
 import { transformConversationsToChats } from '@/lib/api/data-transformers';
 
@@ -10,14 +10,14 @@ export async function GET() {
   }
 
   // 检查是否有lcSessionToken
-  if (!session.user.lcSessionToken) {
+  if (!(session.user as ExtendedUser).lcSessionToken) {
     return Response.json('Missing LC Session Token', { status: 401 });
   }
 
   try {
     // 调用外部API获取对话列表
     const conversationsResponse = await externalChatService.getConversations(
-      session.user.lcSessionToken,
+      (session.user as ExtendedUser).lcSessionToken as string,
       1, // 第一页
       100, // 获取更多数据，前端会处理分页显示
     );

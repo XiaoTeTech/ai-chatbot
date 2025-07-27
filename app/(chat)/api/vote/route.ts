@@ -1,4 +1,4 @@
-import { auth } from '@/app/(auth)/auth';
+import { auth, type ExtendedUser } from '@/app/(auth)/auth';
 import { externalChatService } from '@/lib/api/external-chat-service';
 import { transformVoteTypeToInteractionType } from '@/lib/api/data-transformers';
 
@@ -17,7 +17,7 @@ export async function GET(request: Request) {
   }
 
   // 检查是否有lcSessionToken
-  if (!session.user.lcSessionToken) {
+  if (!(session.user as ExtendedUser).lcSessionToken) {
     return new Response('Missing LC Session Token', { status: 401 });
   }
 
@@ -36,7 +36,7 @@ export async function GET(request: Request) {
 
     // 获取聊天历史，其中包含投票状态
     const chatHistoryResponse = await externalChatService.getChatHistory(
-      session.user.lcSessionToken,
+      (session.user as ExtendedUser).lcSessionToken as string,
       conversationId,
     );
 
@@ -75,7 +75,7 @@ export async function PATCH(request: Request) {
   }
 
   // 检查是否有lcSessionToken
-  if (!session.user.lcSessionToken) {
+  if (!(session.user as ExtendedUser).lcSessionToken) {
     return new Response('Missing LC Session Token', { status: 401 });
   }
 
@@ -100,7 +100,7 @@ export async function PATCH(request: Request) {
 
     // 首先获取当前投票状态
     const chatHistoryResponse = await externalChatService.getChatHistory(
-      session.user.lcSessionToken,
+      (session.user as ExtendedUser).lcSessionToken as string,
       conversationId,
     );
 
@@ -118,7 +118,7 @@ export async function PATCH(request: Request) {
 
     // 调用外部API进行投票
     const result = await externalChatService.interactWithMessage(
-      session.user.lcSessionToken,
+      (session.user as ExtendedUser).lcSessionToken as string,
       {
         conversation_id: conversationId,
         msg_id: msgId,

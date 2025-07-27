@@ -1,4 +1,4 @@
-import { auth } from '@/app/(auth)/auth';
+import { auth, type ExtendedUser } from '@/app/(auth)/auth';
 import { externalChatService } from '@/lib/api/external-chat-service';
 
 // 简单的内存存储
@@ -16,7 +16,7 @@ export async function POST(request: Request) {
   }
 
   // 检查是否有lcSessionToken
-  if (!(session.user as any).lcSessionToken) {
+  if (!(session.user as ExtendedUser).lcSessionToken) {
     return new Response('Missing LC Session Token', { status: 401 });
   }
 
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
 
     // 调用外部聊天API
     const streamResponse = await externalChatService.chatCompletionStream(
-      (session.user as any).lcSessionToken,
+      (session.user as ExtendedUser).lcSessionToken as string,
       {
         messages: apiMessages,
         model: selectedChatModel,
@@ -164,7 +164,7 @@ export async function DELETE(request: Request) {
   }
 
   // 检查是否有lcSessionToken
-  if (!(session.user as any).lcSessionToken) {
+  if (!(session.user as ExtendedUser).lcSessionToken) {
     return new Response('Missing LC Session Token', { status: 401 });
   }
 
@@ -177,7 +177,7 @@ export async function DELETE(request: Request) {
 
     // 调用外部API删除对话
     await externalChatService.deleteConversation(
-      (session.user as any).lcSessionToken,
+      (session.user as ExtendedUser).lcSessionToken as string,
       conversationId,
     );
 

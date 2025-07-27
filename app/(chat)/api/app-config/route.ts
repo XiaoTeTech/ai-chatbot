@@ -1,4 +1,4 @@
-import { auth } from '@/app/(auth)/auth';
+import { auth, type ExtendedUser } from '@/app/(auth)/auth';
 import { externalChatService } from '@/lib/api/external-chat-service';
 
 export async function GET() {
@@ -9,7 +9,7 @@ export async function GET() {
   }
 
   // 检查是否有lcSessionToken
-  if (!(session.user as any).lcSessionToken) {
+  if (!(session.user as ExtendedUser).lcSessionToken) {
     return Response.json('Missing LC Session Token', { status: 401 });
   }
 

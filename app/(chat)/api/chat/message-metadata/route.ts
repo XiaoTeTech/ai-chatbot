@@ -51,7 +51,7 @@ export async function GET(request: Request) {
 
     // 获取聊天历史来查找对应的消息
     const chatHistoryResponse = await externalChatService.getChatHistory(
-      session.user.lcSessionToken,
+      (session.user as ExtendedUser).lcSessionToken as string,
       conversationId,
     );
 

@@ -27,6 +27,26 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
   }
 
   try {
+    // 检查是否为 UUID 格式的旧链接
+    if (id.includes('-') && id.length > 10) {
+      // 这是一个 UUID 格式的旧链接，重定向到首页
+      console.log('🔄 Redirecting UUID chat link to home:', id);
+      return (
+        <div className="flex flex-col items-center justify-center min-h-screen">
+          <h1 className="text-2xl font-bold mb-4">对话已过期</h1>
+          <p className="text-gray-600 mb-4">
+            此对话链接已过期，请返回首页开始新的对话。
+          </p>
+          <a
+            href="/"
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            返回首页
+          </a>
+        </div>
+      );
+    }
+
     // 获取对话详情
     const conversationId = Number.parseInt(id);
     if (Number.isNaN(conversationId)) {

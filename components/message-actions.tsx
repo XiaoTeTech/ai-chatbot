@@ -80,8 +80,37 @@ export function PureMessageActions({
                   let conversationId: number;
                   let msgId: number;
 
-                  if (chatId.includes('-')) {
-                    // UUID 格式，需要获取元数据
+                  // 检查 message.id 是否包含编码的信息
+                  // 格式: "chatcmpl-{uuid}:-{conversation_id}-{msg_id}"
+                  if (message.id.includes(':-')) {
+                    const parts = message.id.split(':-');
+                    if (parts.length === 2) {
+                      const idParts = parts[1].split('-');
+                      if (idParts.length === 2) {
+                        conversationId = Number.parseInt(idParts[0]);
+                        msgId = Number.parseInt(idParts[1]);
+
+                        if (
+                          Number.isNaN(conversationId) ||
+                          Number.isNaN(msgId)
+                        ) {
+                          toast.error('无法解析消息ID中的元数据');
+                          return;
+                        }
+                        console.log('📋 从消息ID解析得到:', {
+                          conversationId,
+                          msgId,
+                        });
+                      } else {
+                        toast.error('消息ID格式不正确');
+                        return;
+                      }
+                    } else {
+                      toast.error('消息ID格式不正确');
+                      return;
+                    }
+                  } else if (chatId.includes('-')) {
+                    // 旧的 UUID 格式，需要获取元数据
                     const metadataResponse = await fetch(
                       `/api/chat/message-metadata?chatId=${chatId}&messageId=${message.id}`,
                     );
@@ -179,8 +208,37 @@ export function PureMessageActions({
                   let conversationId: number;
                   let msgId: number;
 
-                  if (chatId.includes('-')) {
-                    // UUID 格式，需要获取元数据
+                  // 检查 message.id 是否包含编码的信息
+                  // 格式: "chatcmpl-{uuid}:-{conversation_id}-{msg_id}"
+                  if (message.id.includes(':-')) {
+                    const parts = message.id.split(':-');
+                    if (parts.length === 2) {
+                      const idParts = parts[1].split('-');
+                      if (idParts.length === 2) {
+                        conversationId = Number.parseInt(idParts[0]);
+                        msgId = Number.parseInt(idParts[1]);
+
+                        if (
+                          Number.isNaN(conversationId) ||
+                          Number.isNaN(msgId)
+                        ) {
+                          toast.error('无法解析消息ID中的元数据');
+                          return;
+                        }
+                        console.log('📋 从消息ID解析得到:', {
+                          conversationId,
+                          msgId,
+                        });
+                      } else {
+                        toast.error('消息ID格式不正确');
+                        return;
+                      }
+                    } else {
+                      toast.error('消息ID格式不正确');
+                      return;
+                    }
+                  } else if (chatId.includes('-')) {
+                    // 旧的 UUID 格式，需要获取元数据
                     const metadataResponse = await fetch(
                       `/api/chat/message-metadata?chatId=${chatId}&messageId=${message.id}`,
                     );

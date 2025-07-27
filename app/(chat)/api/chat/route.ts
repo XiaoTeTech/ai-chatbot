@@ -120,25 +120,20 @@ export async function POST(request: Request) {
                 try {
                   const jsonStr = line.substring(5).trim();
                   if (jsonStr) {
+                    console.log('📥 Raw JSON from backend:', jsonStr);
                     const data = JSON.parse(jsonStr);
+                    console.log(
+                      '📋 Parsed data structure:',
+                      JSON.stringify(data, null, 2),
+                    );
 
-                    // 提取真实的 conversation_id 和其他元数据
+                    // 提取真实的 conversation_id（仅用于日志）
                     if (data.conversation_id) {
                       console.log(
                         '🆔 Real conversation ID:',
                         data.conversation_id,
                       );
-
-                      // 发送元数据给前端
-                      controller.enqueue(
-                        encoder.encode(
-                          `2:${JSON.stringify({
-                            type: 'conversation_metadata',
-                            conversation_id: data.conversation_id,
-                            msg_id: data.msg_id || null,
-                          })}\n`,
-                        ),
-                      );
+                      console.log('🔍 msg_id:', data.msg_id);
                     }
 
                     // 提取消息内容
@@ -146,9 +141,17 @@ export async function POST(request: Request) {
                       const content = data.choices[0].delta.content;
 
                       // AI SDK期望的格式：每个内容块作为单独的数据块
-                      controller.enqueue(
-                        encoder.encode(`0:"${content.replace(/"/g, '\\"')}"\n`),
-                      );
+                      // 更安全的转义处理
+                      const escapedContent = content
+                        .replace(/\\/g, '\\\\') // 转义反斜杠
+                        .replace(/"/g, '\\"') // 转义双引号
+                        .replace(/\n/g, '\\n') // 转义换行符
+                        .replace(/\r/g, '\\r') // 转义回车符
+                        .replace(/\t/g, '\\t'); // 转义制表符
+
+                      const aiSdkChunk = `0:"${escapedContent}"\n`;
+                      console.log('📤 Sending to AI SDK:', aiSdkChunk);
+                      controller.enqueue(encoder.encode(aiSdkChunk));
                     }
                   }
                 } catch (e) {

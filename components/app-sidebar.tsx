@@ -74,10 +74,10 @@ export function AppSidebar({ user }: { user: User | undefined }) {
         {/* 下载 App 提示 */}
         {config?.store_url && (
           <div className="px-2 pb-2">
-            <button
-              type="button"
-              onClick={() => setShowDownloadDiv(!showDownloadDiv)}
-              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 transition-colors group"
+            <div
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 transition-colors group relative"
+              onMouseEnter={() => setShowDownloadDiv(true)}
+              onMouseLeave={() => setShowDownloadDiv(false)}
             >
               <div className="flex items-center justify-center w-8 h-8 bg-white rounded-md border border-blue-200">
                 <svg
@@ -105,49 +105,53 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                   </span>
                 </div>
               </div>
-            </button>
-
-            {/* 下载信息弹出层 */}
-            {showDownloadDiv && (
-              <div className="mt-2 p-4 bg-white border border-gray-200 rounded-lg shadow-lg">
-                <div className="item" id="download-ai">
-                  <div className="text-center text-sm font-medium text-gray-900 mb-2">
-                    小特 AI 手机仪表盘
-                  </div>
-                  <div className="text-center text-xs text-gray-600 mb-4 leading-relaxed">
-                    主界面 App，提供仪表显示、语音助手、车控等交互功能
-                  </div>
-                  <div className="flex gap-2 mb-4">
-                    <a
-                      id="download-ai-ios"
-                      href="https://apps.apple.com/us/app/id6741570580"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1"
-                    >
-                      <img
-                        src="https://xiaote.com/xiaote_box_store/assets/download/Download.png"
-                        alt="Download on App Store"
-                        className="w-full h-auto"
-                      />
-                    </a>
-                    <a
-                      id="download-ai-android"
-                      href="https://xiaote.com/release/ai/xiaote_ai-1.1.0(25).apk"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1"
-                    >
-                      <img
-                        src="https://xiaote.com/xiaote_box_store/assets/download/Download-1.png"
-                        alt="Download APK"
-                        className="w-full h-auto"
-                      />
-                    </a>
+              {/* 下载信息弹出层 */}
+              {showDownloadDiv && (
+                <div className="absolute bottom-full left-0 right-0 mb-2 p-4 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                  <div className="item" id="download-ai">
+                    <img
+                      className="w-16 h-16 mx-auto mb-3 rounded-lg"
+                      src="https://xiaote.com/xiaote_box_store/assets/download/xiaote ai.png"
+                      alt="小特 AI"
+                    />
+                    <div className="text-center text-sm font-medium text-gray-900 mb-2">
+                      小特 AI 手机仪表盘
+                    </div>
+                    <div className="text-center text-xs text-gray-600 mb-4 leading-relaxed">
+                      主界面 App，提供仪表显示、语音助手、车控等交互功能
+                    </div>
+                    <div className="flex gap-2 mb-4">
+                      <a
+                        id="download-ai-ios"
+                        href="https://apps.apple.com/us/app/id6741570580"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1"
+                      >
+                        <img
+                          src="https://xiaote.com/xiaote_box_store/assets/download/Download.png"
+                          alt="Download on App Store"
+                          className="w-full h-auto"
+                        />
+                      </a>
+                      <a
+                        id="download-ai-android"
+                        href="https://xiaote.com/release/ai/xiaote_ai-1.1.0(25).apk"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1"
+                      >
+                        <img
+                          src="https://xiaote.com/xiaote_box_store/assets/download/Download-1.png"
+                          alt="Download APK"
+                          className="w-full h-auto"
+                        />
+                      </a>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         )}
 

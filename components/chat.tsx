@@ -14,15 +14,88 @@ type SimpleUIMessage = {
   role: 'user' | 'assistant' | 'system';
   content: string;
   createdAt?: Date;
+  vote_status?: 'praise' | 'criticism' | null;
 };
+
+// Loading动画组件
+function LoadingIndicator({
+  type = 'dots',
+}: { type?: 'dots' | 'spinner' | 'pulse' }) {
+  if (type === 'spinner') {
+    return (
+      <svg
+        className="animate-spin h-4 w-4 text-muted-foreground/60"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <circle
+          className="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          strokeWidth="2"
+        />
+        <path
+          className="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+        />
+      </svg>
+    );
+  }
+
+  if (type === 'pulse') {
+    return (
+      <div className="flex items-center gap-2">
+        <div className="w-1 h-4 bg-muted-foreground/60 animate-pulse rounded-full" />
+        <span className="text-sm text-muted-foreground/60 animate-pulse">
+          AI正在思考...
+        </span>
+      </div>
+    );
+  }
+
+  // 默认dots动画
+  return (
+    <div className="flex gap-1">
+      <div
+        className="w-2 h-2 bg-muted-foreground/60 rounded-full animate-bounce"
+        style={{
+          animationDelay: '0ms',
+          animationDuration: '1.4s',
+        }}
+      />
+      <div
+        className="w-2 h-2 bg-muted-foreground/60 rounded-full animate-bounce"
+        style={{
+          animationDelay: '0.2s',
+          animationDuration: '1.4s',
+        }}
+      />
+      <div
+        className="w-2 h-2 bg-muted-foreground/60 rounded-full animate-bounce"
+        style={{
+          animationDelay: '0.4s',
+          animationDuration: '1.4s',
+        }}
+      />
+    </div>
+  );
+}
 
 // 精确还原原版UI的消息显示组件
 function BeautifulMessages({
   messages,
   isLoading,
+  onCopyMessage,
+  onVoteMessage,
 }: {
   messages: SimpleUIMessage[];
   isLoading: boolean;
+  onCopyMessage: (content: string) => void;
+  onVoteMessage: (messageId: string, voteType: 'up' | 'down') => void;
 }) {
   return (
     <div className="flex flex-col min-w-0 gap-6 flex-1 overflow-y-scroll pt-4">
@@ -95,27 +168,7 @@ function BeautifulMessages({
                       index === messages.length - 1 &&
                       message.role === 'assistant' && (
                         <span className="inline-flex items-center ml-2">
-                          {/* 旋转加载器 */}
-                          <svg
-                            className="animate-spin h-4 w-4 text-muted-foreground"
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                          >
-                            <circle
-                              className="opacity-25"
-                              cx="12"
-                              cy="12"
-                              r="10"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                            ></circle>
-                            <path
-                              className="opacity-75"
-                              fill="currentColor"
-                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                            ></path>
-                          </svg>
+                          <LoadingIndicator type="spinner" />
                         </span>
                       )}
                   </p>
@@ -126,7 +179,10 @@ function BeautifulMessages({
               {message.role === 'assistant' && (
                 <div className="flex flex-row gap-2">
                   {/* 复制按钮 */}
-                  <button className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input bg-background hover:bg-accent hover:text-accent-foreground py-1 px-2 h-fit text-muted-foreground">
+                  <button
+                    onClick={() => onCopyMessage(message.content)}
+                    className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input bg-background hover:bg-accent hover:text-accent-foreground py-1 px-2 h-fit text-muted-foreground"
+                  >
                     <svg
                       height="16"
                       strokeLinejoin="round"
@@ -139,7 +195,7 @@ function BeautifulMessages({
                         clipRule="evenodd"
                         d="M2.75 0.5C1.7835 0.5 1 1.2835 1 2.25V9.75C1 10.7165 1.7835 11.5 2.75 11.5H3.75H4.5V10H3.75H2.75C2.61193 10 2.5 9.88807 2.5 9.75V2.25C2.5 2.11193 2.61193 2 2.75 2H8.25C8.38807 2 8.5 2.11193 8.5 2.25V3H10V2.25C10 1.2835 9.2165 0.5 8.25 0.5H2.75ZM7.75 4.5C6.7835 4.5 6 5.2835 6 6.25V13.75C6 14.7165 6.7835 15.5 7.75 15.5H13.25C14.2165 15.5 15 14.7165 15 13.75V6.25C15 5.2835 14.2165 4.5 13.25 4.5H7.75ZM7.5 6.25C7.5 6.11193 7.61193 6 7.75 6H13.25C13.3881 6 13.5 6.11193 13.5 6.25V13.75C13.5 13.8881 13.3881 14 13.25 14H7.75C7.61193 14 7.5 13.8881 7.5 13.75V6.25Z"
                         fill="currentColor"
-                      ></path>
+                      />
                     </svg>
                   </button>
 
@@ -228,60 +284,8 @@ function BeautifulMessages({
                     data-testid="message-content"
                     className="flex flex-col gap-4"
                   >
-                    <div className="flex items-center gap-4 py-2">
-                      {/* 选项1: 三个跳动的点 */}
-                      <div className="flex gap-1">
-                        <div
-                          className="w-2 h-2 bg-muted-foreground/60 rounded-full animate-bounce"
-                          style={{
-                            animationDelay: '0ms',
-                            animationDuration: '1.4s',
-                          }}
-                        />
-                        <div
-                          className="w-2 h-2 bg-muted-foreground/60 rounded-full animate-bounce"
-                          style={{
-                            animationDelay: '0.2s',
-                            animationDuration: '1.4s',
-                          }}
-                        />
-                        <div
-                          className="w-2 h-2 bg-muted-foreground/60 rounded-full animate-bounce"
-                          style={{
-                            animationDelay: '0.4s',
-                            animationDuration: '1.4s',
-                          }}
-                        />
-                      </div>
-
-                      {/* 选项2: 旋转加载器 */}
-                      <div className="flex items-center">
-                        <svg
-                          className="animate-spin h-4 w-4 text-muted-foreground/60"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                          />
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          />
-                        </svg>
-                      </div>
-
-                      {/* 选项3: 脉冲文字 */}
-                      <div className="text-sm text-muted-foreground/60 animate-pulse">
-                        AI正在思考...
-                      </div>
+                    <div className="flex items-center gap-3 py-2">
+                      <LoadingIndicator type="dots" />
                     </div>
                   </div>
                 </div>
@@ -319,6 +323,70 @@ export function Chat({
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
+
+  // 复制消息到剪贴板
+  const copyToClipboard = async (content: string) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      toast.success('已复制到剪贴板');
+    } catch (error) {
+      toast.error('复制失败');
+    }
+  };
+
+  // 处理点赞/踩
+  const handleVote = async (messageId: string, voteType: 'up' | 'down') => {
+    if (!session?.user) {
+      openLoginDialog();
+      return;
+    }
+
+    try {
+      // 获取消息元数据
+      const metadataResponse = await fetch(
+        `/api/chat/message-metadata?chatId=${id}&messageId=${messageId}`,
+      );
+
+      if (!metadataResponse.ok) {
+        throw new Error('Failed to get message metadata');
+      }
+
+      const metadata = await metadataResponse.json();
+
+      // 调用投票API
+      const response = await fetch('/api/vote', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          chatId: id,
+          messageId: messageId,
+          type: voteType,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to vote');
+      }
+
+      const result = await response.json();
+
+      // 更新本地消息状态
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === messageId
+            ? { ...msg, vote_status: result.vote_status }
+            : msg,
+        ),
+      );
+
+      toast.success(voteType === 'up' ? '点赞成功' : '点踩成功');
+    } catch (error) {
+      console.error('Vote failed:', error);
+      toast.error('操作失败，请重试');
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -73,20 +73,25 @@ export async function POST(request: Request) {
 
               try {
                 const data = JSON.parse(jsonStr);
-                
+
                 // 提取 conversation_id
                 if (data.id && !extractedConversationId) {
                   console.log('🔍 检查 ID:', data.id);
-                  
+
                   // 尝试从不同格式中提取
                   if (data.id.includes(':')) {
                     const parts = data.id.split(':');
                     const lastPart = parts[parts.length - 1];
-                    const cleanPart = lastPart.startsWith('-') ? lastPart.substring(1) : lastPart;
+                    const cleanPart = lastPart.startsWith('-')
+                      ? lastPart.substring(1)
+                      : lastPart;
                     const convPart = cleanPart.split('-')[0];
-                    if (!isNaN(Number(convPart))) {
+                    if (!Number.isNaN(Number(convPart))) {
                       extractedConversationId = Number(convPart);
-                      console.log('🆔 提取到 conversation_id:', extractedConversationId);
+                      console.log(
+                        '🆔 提取到 conversation_id:',
+                        extractedConversationId,
+                      );
                       // 保存到内存
                       conversationMap.set(id, extractedConversationId);
                     }
@@ -96,7 +101,7 @@ export async function POST(request: Request) {
                 // 提取内容并直接发送
                 if (data.choices?.[0]?.delta?.content) {
                   const content = data.choices[0].delta.content;
-                  
+
                   // 直接发送文本内容
                   controller.enqueue(encoder.encode(content));
                 }
@@ -118,7 +123,7 @@ export async function POST(request: Request) {
       headers: {
         'Content-Type': 'text/plain; charset=utf-8',
         'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
+        Connection: 'keep-alive',
       },
     });
   } catch (error) {
@@ -137,8 +142,48 @@ export async function GET(request: Request) {
   }
 
   const conversationId = conversationMap.get(tempId);
-  
-  return Response.json({ 
-    conversationId: conversationId || null 
+
+  return Response.json({
+    conversationId: conversationId || null,
   });
+}
+
+// 删除对话的 API
+export async function DELETE(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get('id');
+
+  if (!id) {
+    return new Response('id is required', { status: 400 });
+  }
+
+  const session = await auth();
+
+  if (!session || !session.user) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+
+  // 检查是否有lcSessionToken
+  if (!(session.user as any).lcSessionToken) {
+    return new Response('Missing LC Session Token', { status: 401 });
+  }
+
+  try {
+    // 将字符串ID转换为数字
+    const conversationId = Number.parseInt(id);
+    if (Number.isNaN(conversationId)) {
+      return new Response('Invalid conversation ID', { status: 400 });
+    }
+
+    // 调用外部API删除对话
+    await externalChatService.deleteConversation(
+      (session.user as any).lcSessionToken,
+      conversationId,
+    );
+
+    return new Response('Deleted successfully', { status: 200 });
+  } catch (error) {
+    console.error('Failed to delete conversation:', error);
+    return new Response('Failed to delete conversation', { status: 500 });
+  }
 }

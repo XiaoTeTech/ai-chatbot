@@ -71,12 +71,54 @@ export function transformChatHistoryToDBMessage(
 export function transformChatHistoryToDBMessages(
   response: ChatHistoryPaginatedResponse,
 ): DBMessage[] {
+  console.log(
+    '🔍 Raw external API response items:',
+    response.items.map((item) => ({
+      msg_id: item.msg_id,
+      msg_type: item.msg_type,
+      message: item.message.substring(0, 50) + '...',
+      timestamp: item.timestamp,
+      formatted_time: new Date(item.timestamp * 1000).toISOString(),
+    })),
+  );
+
   const messages = response.items.map(transformChatHistoryToDBMessage);
 
-  // 按时间戳排序，确保消息按正确的时间顺序显示
-  return messages.sort((a, b) => {
-    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+  console.log(
+    '🔍 Messages before sorting:',
+    messages.map((msg) => ({
+      id: msg.id,
+      role: msg.role,
+      content: msg.parts[0]?.text?.substring(0, 50) + '...',
+      createdAt: msg.createdAt.toISOString(),
+    })),
+  );
+
+  // 按时间戳排序，如果时间戳相同则按msg_id排序（较小的ID表示较早的消息）
+  const sortedMessages = messages.sort((a, b) => {
+    const timeA = new Date(a.createdAt).getTime();
+    const timeB = new Date(b.createdAt).getTime();
+
+    // 首先按时间戳排序
+    if (timeA !== timeB) {
+      return timeA - timeB;
+    }
+
+    // 如果时间戳相同，按msg_id排序（较小的ID在前）
+    return parseInt(a.id) - parseInt(b.id);
   });
+
+  console.log(
+    '🔍 Messages after sorting:',
+    sortedMessages.map((msg) => ({
+      id: msg.id,
+      role: msg.role,
+      content: msg.parts[0]?.text?.substring(0, 50) + '...',
+      createdAt: msg.createdAt.toISOString(),
+    })),
+  );
+
+  return sortedMessages;
 }
 
 // 将DBMessage转换为UIMessage（用于前端显示）

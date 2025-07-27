@@ -196,9 +196,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
     return (
       <SidebarGroup>
         <SidebarGroupContent>
-          <div className="px-2 text-zinc-500 w-full flex flex-row justify-center items-center text-sm gap-2">
-             
-          </div>
+          <div className="px-2 text-zinc-500 w-full flex flex-row justify-center items-center text-sm gap-2"></div>
         </SidebarGroupContent>
       </SidebarGroup>
     );
@@ -207,9 +205,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
   if (isLoading) {
     return (
       <SidebarGroup>
-        <div className="px-2 py-1 text-xs text-sidebar-foreground/50">
-        今天
-        </div>
+        <div className="px-2 py-1 text-xs text-sidebar-foreground/50">今天</div>
         <SidebarGroupContent>
           <div className="flex flex-col">
             {[44, 32, 28, 64, 52].map((item) => (
@@ -238,7 +234,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
       <SidebarGroup>
         <SidebarGroupContent>
           <div className="px-2 text-zinc-500 w-full flex flex-row justify-center items-center text-sm gap-2">
-          当我们开始聊天时，咱们的对话就会显示在这儿啦！
+            当我们开始聊天时，咱们的对话就会显示在这儿啦！
           </div>
         </SidebarGroupContent>
       </SidebarGroup>
@@ -292,7 +288,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                     {groupedChats.today.length > 0 && (
                       <>
                         <div className="px-2 py-1 text-xs text-sidebar-foreground/50">
-                        今天
+                          今天
                         </div>
                         {groupedChats.today.map((chat) => (
                           <ChatItem
@@ -312,7 +308,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                     {groupedChats.yesterday.length > 0 && (
                       <>
                         <div className="px-2 py-1 text-xs text-sidebar-foreground/50 mt-6">
-                        昨天
+                          昨天
                         </div>
                         {groupedChats.yesterday.map((chat) => (
                           <ChatItem
@@ -352,7 +348,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
                     {groupedChats.lastMonth.length > 0 && (
                       <>
                         <div className="px-2 py-1 text-xs text-sidebar-foreground/50 mt-6">
-                          Last 30 days
+                          最近30天
                         </div>
                         {groupedChats.lastMonth.map((chat) => (
                           <ChatItem
@@ -399,14 +395,12 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
           <AlertDialogHeader>
             <AlertDialogTitle>确定？</AlertDialogTitle>
             <AlertDialogDescription>
-            此操作无法撤消。这将永久删除您的聊天记录并将其从我们的服务器中移除。
+              此操作无法撤消。这将永久删除您的聊天记录并将其从我们的服务器中移除。
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>
-              继续
-            </AlertDialogAction>
+            <AlertDialogAction onClick={handleDelete}>继续</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

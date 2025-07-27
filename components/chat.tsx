@@ -15,6 +15,7 @@ import { useArtifactSelector } from '@/hooks/use-artifact';
 import { toast } from 'sonner';
 import { useSession } from 'next-auth/react';
 import { useLoginDialog } from '@/lib/context';
+import { useRouter } from 'next/navigation';
 
 export function Chat({
   id,
@@ -32,6 +33,7 @@ export function Chat({
   const { mutate } = useSWRConfig();
   const { data: session } = useSession();
   const { open } = useLoginDialog();
+  const router = useRouter();
 
   const {
     messages,
@@ -57,6 +59,22 @@ export function Chat({
     onError: (error) => {
       console.error('🚨 Chat error:', error);
       toast.error('出问题啦，请再试一次！');
+    },
+    onResponse: (response) => {
+      console.log(
+        '📥 Received chat response:',
+        response.status,
+        response.statusText,
+      );
+
+      // 检查响应头中的 conversation_id
+      const conversationId = response.headers.get('X-Conversation-Id');
+      if (conversationId && id !== conversationId) {
+        console.log(
+          `🔄 Updating URL from /chat/${id} to /chat/${conversationId}`,
+        );
+        router.replace(`/chat/${conversationId}`);
+      }
     },
   });
 

@@ -65,6 +65,16 @@ export async function POST(request: Request) {
     // 确定使用的模型 - 根据Python示例使用gpt-3.5-turbo
     const modelName = isSuggestedAction ? 'gpt-3.5-turbo' : 'gpt-3.5-turbo';
 
+    // 判断是否为新对话（UUID 格式表示新对话）
+    const isNewConversation = id.includes('-'); // UUID 包含连字符
+    const conversationId = isNewConversation ? null : Number.parseInt(id);
+
+    console.log('🔍 Conversation info:', {
+      id,
+      isNewConversation,
+      conversationId,
+    });
+
     // 调用外部LLM API进行流式聊天
     const streamResponse = await externalChatService.chatCompletionStream(
       session.user.lcSessionToken,
@@ -72,7 +82,8 @@ export async function POST(request: Request) {
         model: modelName,
         messages: externalMessages,
         stream: true,
-        conversation_id: id,
+        conversation_id: conversationId,
+        from_web: true,
       },
     );
 
@@ -87,12 +98,13 @@ export async function POST(request: Request) {
     // 创建转换流，将外部API的SSE格式转换为AI SDK期望的格式
     console.log('🔄 Creating transformed stream for AI SDK...');
 
+    let responseConversationId: number | null = null;
+
     const transformedStream = new ReadableStream({
       async start(controller) {
         const reader = streamResponse.getReader();
         const decoder = new TextDecoder();
         const encoder = new TextEncoder();
-        let realConversationId: number | null = null;
 
         try {
           while (true) {
@@ -113,13 +125,12 @@ export async function POST(request: Request) {
                     const data = JSON.parse(jsonStr);
 
                     // 提取真实的 conversation_id
-                    if (data.conversation_id && !realConversationId) {
-                      realConversationId = data.conversation_id;
+                    if (data.conversation_id && !responseConversationId) {
+                      responseConversationId = data.conversation_id;
                       console.log(
                         '🆔 Real conversation ID:',
-                        realConversationId,
+                        responseConversationId,
                       );
-                      // TODO: 找到正确的方式来传递 conversation_id 给前端
                     }
 
                     // 提取消息内容
@@ -147,12 +158,19 @@ export async function POST(request: Request) {
       },
     });
 
+    const responseHeaders: Record<string, string> = {
+      'Content-Type': 'text/plain; charset=utf-8',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+    };
+
+    // 如果获取到了真实的 conversation_id，添加到响应头
+    if (responseConversationId) {
+      responseHeaders['X-Conversation-Id'] = String(responseConversationId);
+    }
+
     return new Response(transformedStream, {
-      headers: {
-        'Content-Type': 'text/plain; charset=utf-8',
-        'Cache-Control': 'no-cache',
-        Connection: 'keep-alive',
-      },
+      headers: responseHeaders,
     });
   } catch (error) {
     console.error(error);

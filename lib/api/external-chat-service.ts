@@ -75,7 +75,8 @@ interface ChatCompletionRequest {
     content: string;
   }>;
   stream?: boolean;
-  conversation_id?: string | null;
+  conversation_id?: number | null;
+  from_web?: boolean;
   temperature?: number;
   presence_penalty?: number;
   frequency_penalty?: number;

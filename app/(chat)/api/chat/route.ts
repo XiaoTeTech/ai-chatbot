@@ -122,11 +122,22 @@ export async function POST(request: Request) {
                   if (jsonStr) {
                     const data = JSON.parse(jsonStr);
 
-                    // 提取真实的 conversation_id（仅用于日志）
+                    // 提取真实的 conversation_id 和其他元数据
                     if (data.conversation_id) {
                       console.log(
                         '🆔 Real conversation ID:',
                         data.conversation_id,
+                      );
+
+                      // 发送元数据给前端
+                      controller.enqueue(
+                        encoder.encode(
+                          `2:${JSON.stringify({
+                            type: 'conversation_metadata',
+                            conversation_id: data.conversation_id,
+                            msg_id: data.msg_id || null,
+                          })}\n`,
+                        ),
                       );
                     }
 

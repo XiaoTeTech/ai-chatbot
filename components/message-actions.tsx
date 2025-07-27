@@ -71,60 +71,88 @@ export function PureMessageActions({
               disabled={vote?.isUpvoted}
               variant="outline"
               onClick={async () => {
-                // 检查是否为 UUID 格式的 chatId
-                if (chatId.includes('-')) {
-                  toast.error('无法在新对话中进行投票操作');
-                  return;
-                }
-
                 const interactionType = vote?.isUpvoted
                   ? 'cancel_praise'
                   : 'add_praise';
 
-                const upvote = fetch('/api/chat/interaction', {
-                  method: 'POST',
-                  body: JSON.stringify({
-                    conversation_id: Number.parseInt(chatId),
-                    msg_id: Number.parseInt(message.id),
-                    interaction_type: interactionType,
-                  }),
-                });
+                try {
+                  // 智能获取 conversation_id 和 msg_id
+                  let conversationId: number;
+                  let msgId: number;
 
-                toast.promise(upvote, {
-                  loading: '...',
-                  success: () => {
-                    mutate<Array<Vote>>(
-                      `/api/vote?chatId=${chatId}`,
-                      (currentVotes) => {
-                        if (!currentVotes) return [];
-
-                        const votesWithoutCurrent = currentVotes.filter(
-                          (vote) => vote.messageId !== message.id,
-                        );
-
-                        // 根据交互类型更新投票状态
-                        if (interactionType === 'cancel_praise') {
-                          // 取消点赞，移除投票记录
-                          return votesWithoutCurrent;
-                        } else {
-                          // 添加点赞
-                          return [
-                            ...votesWithoutCurrent,
-                            {
-                              chatId,
-                              messageId: message.id,
-                              isUpvoted: true,
-                            },
-                          ];
-                        }
-                      },
-                      { revalidate: false },
+                  if (chatId.includes('-')) {
+                    // UUID 格式，需要获取元数据
+                    const metadataResponse = await fetch(
+                      `/api/chat/message-metadata?chatId=${chatId}&messageId=${message.id}`,
                     );
 
-                    return '操作成功';
-                  },
-                  error: '操作失败',
-                });
+                    if (!metadataResponse.ok) {
+                      toast.error('无法获取消息元数据，请刷新页面后重试');
+                      return;
+                    }
+
+                    const metadata = await metadataResponse.json();
+                    conversationId = metadata.conversation_id;
+                    msgId = metadata.msg_id;
+                  } else {
+                    // 数字格式，直接使用
+                    conversationId = Number.parseInt(chatId);
+                    msgId = Number.parseInt(message.id);
+
+                    if (Number.isNaN(conversationId) || Number.isNaN(msgId)) {
+                      toast.error('无效的对话或消息ID');
+                      return;
+                    }
+                  }
+
+                  const upvote = fetch('/api/chat/interaction', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                      conversation_id: conversationId,
+                      msg_id: msgId,
+                      interaction_type: interactionType,
+                    }),
+                  });
+
+                  toast.promise(upvote, {
+                    loading: '...',
+                    success: () => {
+                      mutate<Array<Vote>>(
+                        `/api/vote?chatId=${chatId}`,
+                        (currentVotes) => {
+                          if (!currentVotes) return [];
+
+                          const votesWithoutCurrent = currentVotes.filter(
+                            (vote) => vote.messageId !== message.id,
+                          );
+
+                          // 根据交互类型更新投票状态
+                          if (interactionType === 'cancel_praise') {
+                            // 取消点赞，移除投票记录
+                            return votesWithoutCurrent;
+                          } else {
+                            // 添加点赞
+                            return [
+                              ...votesWithoutCurrent,
+                              {
+                                chatId,
+                                messageId: message.id,
+                                isUpvoted: true,
+                              },
+                            ];
+                          }
+                        },
+                        { revalidate: false },
+                      );
+
+                      return '操作成功';
+                    },
+                    error: '操作失败',
+                  });
+                } catch (error) {
+                  console.error('Vote error:', error);
+                  toast.error('投票操作失败');
+                }
               }}
             >
               <ThumbUpIcon />
@@ -141,61 +169,89 @@ export function PureMessageActions({
               variant="outline"
               disabled={vote && !vote.isUpvoted}
               onClick={async () => {
-                // 检查是否为 UUID 格式的 chatId
-                if (chatId.includes('-')) {
-                  toast.error('无法在新对话中进行投票操作');
-                  return;
-                }
-
                 const interactionType =
                   vote && !vote.isUpvoted
                     ? 'cancel_criticism'
                     : 'add_criticism';
 
-                const downvote = fetch('/api/chat/interaction', {
-                  method: 'POST',
-                  body: JSON.stringify({
-                    conversation_id: Number.parseInt(chatId),
-                    msg_id: Number.parseInt(message.id),
-                    interaction_type: interactionType,
-                  }),
-                });
+                try {
+                  // 智能获取 conversation_id 和 msg_id
+                  let conversationId: number;
+                  let msgId: number;
 
-                toast.promise(downvote, {
-                  loading: '...',
-                  success: () => {
-                    mutate<Array<Vote>>(
-                      `/api/vote?chatId=${chatId}`,
-                      (currentVotes) => {
-                        if (!currentVotes) return [];
-
-                        const votesWithoutCurrent = currentVotes.filter(
-                          (vote) => vote.messageId !== message.id,
-                        );
-
-                        // 根据交互类型更新投票状态
-                        if (interactionType === 'cancel_criticism') {
-                          // 取消踩，移除投票记录
-                          return votesWithoutCurrent;
-                        } else {
-                          // 添加踩
-                          return [
-                            ...votesWithoutCurrent,
-                            {
-                              chatId,
-                              messageId: message.id,
-                              isUpvoted: false,
-                            },
-                          ];
-                        }
-                      },
-                      { revalidate: false },
+                  if (chatId.includes('-')) {
+                    // UUID 格式，需要获取元数据
+                    const metadataResponse = await fetch(
+                      `/api/chat/message-metadata?chatId=${chatId}&messageId=${message.id}`,
                     );
 
-                    return '操作成功';
-                  },
-                  error: '操作失败',
-                });
+                    if (!metadataResponse.ok) {
+                      toast.error('无法获取消息元数据，请刷新页面后重试');
+                      return;
+                    }
+
+                    const metadata = await metadataResponse.json();
+                    conversationId = metadata.conversation_id;
+                    msgId = metadata.msg_id;
+                  } else {
+                    // 数字格式，直接使用
+                    conversationId = Number.parseInt(chatId);
+                    msgId = Number.parseInt(message.id);
+
+                    if (Number.isNaN(conversationId) || Number.isNaN(msgId)) {
+                      toast.error('无效的对话或消息ID');
+                      return;
+                    }
+                  }
+
+                  const downvote = fetch('/api/chat/interaction', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                      conversation_id: conversationId,
+                      msg_id: msgId,
+                      interaction_type: interactionType,
+                    }),
+                  });
+
+                  toast.promise(downvote, {
+                    loading: '...',
+                    success: () => {
+                      mutate<Array<Vote>>(
+                        `/api/vote?chatId=${chatId}`,
+                        (currentVotes) => {
+                          if (!currentVotes) return [];
+
+                          const votesWithoutCurrent = currentVotes.filter(
+                            (vote) => vote.messageId !== message.id,
+                          );
+
+                          // 根据交互类型更新投票状态
+                          if (interactionType === 'cancel_criticism') {
+                            // 取消踩，移除投票记录
+                            return votesWithoutCurrent;
+                          } else {
+                            // 添加踩
+                            return [
+                              ...votesWithoutCurrent,
+                              {
+                                chatId,
+                                messageId: message.id,
+                                isUpvoted: false,
+                              },
+                            ];
+                          }
+                        },
+                        { revalidate: false },
+                      );
+
+                      return '操作成功';
+                    },
+                    error: '操作失败',
+                  });
+                } catch (error) {
+                  console.error('Vote error:', error);
+                  toast.error('投票操作失败');
+                }
               }}
             >
               <ThumbDownIcon />

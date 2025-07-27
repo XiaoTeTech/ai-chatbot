@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { useSession } from 'next-auth/react';
 import { useLoginDialog } from '@/lib/context';
 import { useRouter } from 'next/navigation';
+import { useAppConfig } from '@/lib/hooks/use-app-config';
 // 自定义消息类型
 type SimpleUIMessage = {
   id: string;
@@ -91,19 +92,92 @@ function BeautifulMessages({
   isLoading,
   onCopyMessage,
   onVoteMessage,
+  onSuggestionClick,
 }: {
   messages: SimpleUIMessage[];
   isLoading: boolean;
   onCopyMessage: (content: string) => void;
   onVoteMessage: (messageId: string, voteType: 'up' | 'down') => void;
+  onSuggestionClick: (suggestion: string) => void;
 }) {
+  const { config } = useAppConfig();
+  const { data: session } = useSession();
+
   return (
     <div className="flex flex-col min-w-0 gap-6 flex-1 overflow-y-scroll pt-4">
       {messages.length === 0 && (
-        <div className="mx-auto max-w-3xl px-4">
-          <div className="flex flex-col gap-4 text-center">
-            <h1 className="text-2xl font-semibold">欢迎使用 AI 助手</h1>
-            <p className="text-muted-foreground">开始对话吧！</p>
+        <div className="mx-auto max-w-4xl px-4 py-8">
+          <div className="flex flex-col items-center gap-12">
+            {/* 问候语 */}
+            <div className="text-center">
+              <h1 className="text-4xl font-semibold text-gray-900 dark:text-gray-100 mb-3">
+                晚上好，{session?.user?.name || '朋友'}！
+              </h1>
+              <p className="text-lg text-gray-600 dark:text-gray-400 font-normal">
+                {config?.chat_introduction ||
+                  '嘿，我是小特AI！随时为你解惑，点燃生活✨与工作💼的灵感火花💡。有什么想聊的？'}
+              </p>
+            </div>
+
+            {/* 建议卡片 */}
+            {config?.chat_suggestions && config.chat_suggestions.length > 0 && (
+              <div className="w-full max-w-2xl">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {config.chat_suggestions.map((suggestion, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => onSuggestionClick(suggestion)}
+                      className="group relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 text-left hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    >
+                      <div className="flex flex-col gap-2">
+                        <h3 className="font-medium text-gray-900 dark:text-gray-100 text-base leading-6">
+                          {/* 提取主题作为标题 */}
+                          {suggestion.includes('成语接龙')
+                            ? '成语接龙'
+                            : suggestion.includes('特斯拉股价')
+                              ? '特斯拉股价'
+                              : suggestion.includes('AI技术')
+                                ? 'AI技术突破'
+                                : suggestion.includes('电动车')
+                                  ? '电动车新闻'
+                                  : suggestion.split('？')[0] ||
+                                    suggestion.split('?')[0] ||
+                                    suggestion}
+                        </h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 leading-5">
+                          {/* 根据内容生成描述 */}
+                          {suggestion.includes('成语接龙')
+                            ? '文字游戏，寓教于乐'
+                            : suggestion.includes('特斯拉股价')
+                              ? '实时股价和市场分析'
+                              : suggestion.includes('AI技术')
+                                ? '最新科技动态和趋势'
+                                : suggestion.includes('电动车')
+                                  ? '行业资讯和发展动态'
+                                  : '点击开始对话'}
+                        </p>
+                      </div>
+                      <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <svg
+                          className="w-4 h-4 text-gray-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 5l7 7-7 7"
+                          />
+                        </svg>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -348,6 +422,20 @@ export function Chat({
     }
   };
 
+  // 处理建议点击
+  const handleSuggestionClick = async (suggestion: string) => {
+    setInput(suggestion);
+    // 模拟表单提交事件
+    const fakeEvent = {
+      preventDefault: () => {},
+    } as React.FormEvent;
+
+    // 先设置输入值，然后提交
+    setTimeout(() => {
+      handleSubmit(fakeEvent);
+    }, 100);
+  };
+
   // 处理点赞/踩
   const handleVote = async (messageId: string, voteType: 'up' | 'down') => {
     if (!session?.user) {
@@ -578,6 +666,7 @@ export function Chat({
           isLoading={isLoading}
           onCopyMessage={copyToClipboard}
           onVoteMessage={handleVote}
+          onSuggestionClick={handleSuggestionClick}
         />
         <form
           onSubmit={handleSubmit}

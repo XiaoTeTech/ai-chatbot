@@ -67,6 +67,17 @@ interface InteractionResponse {
   vote_status?: string | null;
 }
 
+// 应用配置响应
+interface AppConfigResponse {
+  store_url: string;
+  store_app_scheme: string;
+  vehicle_data_polling_interval: number;
+  sentence_stop_delay: number;
+  support_email: string;
+  chat_introduction: string;
+  chat_suggestions: string[];
+}
+
 // LLM聊天完成请求
 interface ChatCompletionRequest {
   model: string;
@@ -279,6 +290,15 @@ export class ExternalChatService {
     );
   }
 
+  // 获取应用配置
+  async getAppConfig(lcSessionToken: string): Promise<AppConfigResponse> {
+    return this.request<AppConfigResponse>(
+      '/api/chat_conf/app_config',
+      { method: 'GET' },
+      lcSessionToken,
+    );
+  }
+
   // LLM聊天完成（非流式）
   async chatCompletion(
     lcSessionToken: string,
@@ -408,6 +428,7 @@ export type {
   ChatHistoryPaginatedResponse,
   InteractionRequest,
   InteractionResponse,
+  AppConfigResponse,
   ChatCompletionRequest,
   ExternalApiError,
 };

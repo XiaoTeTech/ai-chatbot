@@ -8,7 +8,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.xiaote.com/'),
-  title: 'XIAOTE AI',
+  title: '小特 AI - 懂特斯拉，更懂你',
   description: '你的特斯拉AI助手',
 };
 

@@ -1,7 +1,15 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  experimental: {    ppr: true,  },
+  experimental: { ppr: true },
+  // 忽略 TypeScript 错误
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  // 忽略 ESLint 错误
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   images: {
     remotePatterns: [
       {

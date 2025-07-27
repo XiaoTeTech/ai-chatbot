@@ -8,7 +8,9 @@ import type {
 } from './external-chat-service';
 
 // 将外部API的对话数据转换为本地Chat类型
-export function transformConversationToChat(conversation: ConversationResponse): Chat {
+export function transformConversationToChat(
+  conversation: ConversationResponse,
+): Chat {
   return {
     id: conversation.id.toString(),
     createdAt: new Date(conversation.start_time * 1000),
@@ -20,14 +22,32 @@ export function transformConversationToChat(conversation: ConversationResponse):
 
 // 将外部API的对话列表转换为本地Chat数组
 export function transformConversationsToChats(
-  response: ConversationsPaginatedResponse
+  response: ConversationsPaginatedResponse,
 ): Chat[] {
   return response.items.map(transformConversationToChat);
 }
 
+// 将外部API的消息类型转换为前端期望的角色类型
+function transformMessageRole(
+  msgType: string,
+): 'user' | 'assistant' | 'system' {
+  switch (msgType) {
+    case 'user':
+      return 'user';
+    case 'system':
+      // 外部API中的system消息实际上是AI的回复，应该显示为assistant
+      return 'assistant';
+    case 'assistant':
+      return 'assistant';
+    default:
+      // 默认情况下，如果不是user，就认为是assistant
+      return msgType === 'user' ? 'user' : 'assistant';
+  }
+}
+
 // 将外部API的聊天历史转换为本地DBMessage类型
 export function transformChatHistoryToDBMessage(
-  history: ChatHistoryResponse
+  history: ChatHistoryResponse,
 ): DBMessage {
   // 将消息内容转换为parts格式
   const parts = [
@@ -40,7 +60,7 @@ export function transformChatHistoryToDBMessage(
   return {
     id: history.msg_id.toString(),
     chatId: history.conversation_id.toString(),
-    role: history.msg_type,
+    role: transformMessageRole(history.msg_type),
     parts: parts,
     attachments: [], // 外部API暂时不支持附件
     createdAt: new Date(history.timestamp * 1000),
@@ -49,7 +69,7 @@ export function transformChatHistoryToDBMessage(
 
 // 将外部API的聊天历史列表转换为本地DBMessage数组
 export function transformChatHistoryToDBMessages(
-  response: ChatHistoryPaginatedResponse
+  response: ChatHistoryPaginatedResponse,
 ): DBMessage[] {
   return response.items.map(transformChatHistoryToDBMessage);
 }
@@ -59,8 +79,8 @@ export function transformDBMessageToUIMessage(dbMessage: DBMessage): UIMessage {
   let content = '';
   if (Array.isArray(dbMessage.parts)) {
     content = dbMessage.parts
-      .filter(part => part.type === 'text')
-      .map(part => part.text)
+      .filter((part) => part.type === 'text')
+      .map((part) => part.text)
       .join(' ');
   }
 
@@ -70,12 +90,15 @@ export function transformDBMessageToUIMessage(dbMessage: DBMessage): UIMessage {
     role: dbMessage.role as UIMessage['role'],
     content: content,
     createdAt: dbMessage.createdAt,
-    experimental_attachments: (dbMessage.attachments as Array<Attachment>) ?? [],
+    experimental_attachments:
+      (dbMessage.attachments as Array<Attachment>) ?? [],
   };
 }
 
 // 将DBMessage数组转换为UIMessage数组
-export function transformDBMessagesToUIMessages(dbMessages: DBMessage[]): UIMessage[] {
+export function transformDBMessagesToUIMessages(
+  dbMessages: DBMessage[],
+): UIMessage[] {
   return dbMessages.map(transformDBMessageToUIMessage);
 }
 
@@ -83,7 +106,7 @@ export function transformDBMessagesToUIMessages(dbMessages: DBMessage[]): UIMess
 export function transformVoteStatusToVote(
   chatId: string,
   messageId: string,
-  voteStatus?: string | null
+  voteStatus?: string | null,
 ): Vote | null {
   if (!voteStatus) {
     return null;
@@ -110,7 +133,9 @@ export function transformUIMessagesToExternalFormat(messages: UIMessage[]) {
 }
 
 // 从外部API响应中提取对话ID
-export function extractConversationIdFromResponse(response: any): string | null {
+export function extractConversationIdFromResponse(
+  response: any,
+): string | null {
   // 这个函数需要根据实际的LLM API响应格式来实现
   // 目前假设响应中包含conversation_id字段
   if (response && response.conversation_id) {
@@ -127,7 +152,7 @@ export function generateConversationId(): string {
 // 将本地的投票类型转换为外部API的交互类型
 export function transformVoteTypeToInteractionType(
   type: 'up' | 'down',
-  currentStatus?: string | null
+  currentStatus?: string | null,
 ): 'add_praise' | 'cancel_praise' | 'add_criticism' | 'cancel_criticism' {
   if (type === 'up') {
     return currentStatus === 'praise' ? 'cancel_praise' : 'add_praise';
@@ -156,7 +181,7 @@ export interface LocalPaginationInfo {
 }
 
 export function transformPaginationInfo(
-  externalPagination: any
+  externalPagination: any,
 ): LocalPaginationInfo {
   return {
     total: externalPagination.total || 0,
@@ -178,7 +203,9 @@ export function dateToTimestamp(date: Date): number {
 }
 
 // 验证数据完整性
-export function validateConversationData(conversation: ConversationResponse): boolean {
+export function validateConversationData(
+  conversation: ConversationResponse,
+): boolean {
   return !!(
     conversation.id &&
     conversation.start_time &&

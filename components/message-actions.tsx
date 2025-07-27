@@ -110,8 +110,8 @@ export function PureMessageActions({
                       return;
                     }
                   } else if (chatId === 'new') {
-                    // 新对话，无法进行投票
-                    toast.error('请等待对话创建完成后再进行投票');
+                    // 新对话但消息没有编码信息，无法投票
+                    toast.error('消息信息不完整，请刷新页面后重试');
                     return;
                   } else if (chatId.includes('-')) {
                     // 旧的 UUID 格式，需要获取元数据
@@ -212,7 +212,13 @@ export function PureMessageActions({
                   let conversationId: number;
                   let msgId: number;
 
-                  // 检查 message.id 是否包含编码的信息
+                  console.log('🔍 投票调试信息:', {
+                    chatId,
+                    messageId: message.id,
+                    hasEncoding: message.id.includes(':-'),
+                  });
+
+                  // 优先检查 message.id 是否包含编码的信息
                   // 格式: "chatcmpl-{uuid}:-{conversation_id}-{msg_id}"
                   if (message.id.includes(':-')) {
                     const parts = message.id.split(':-');
@@ -241,26 +247,8 @@ export function PureMessageActions({
                       toast.error('消息ID格式不正确');
                       return;
                     }
-                  } else if (chatId === 'new') {
-                    // 新对话，无法进行投票
-                    toast.error('请等待对话创建完成后再进行投票');
-                    return;
-                  } else if (chatId.includes('-')) {
-                    // 旧的 UUID 格式，需要获取元数据
-                    const metadataResponse = await fetch(
-                      `/api/chat/message-metadata?chatId=${chatId}&messageId=${message.id}`,
-                    );
-
-                    if (!metadataResponse.ok) {
-                      toast.error('无法获取消息元数据，请刷新页面后重试');
-                      return;
-                    }
-
-                    const metadata = await metadataResponse.json();
-                    conversationId = metadata.conversation_id;
-                    msgId = metadata.msg_id;
-                  } else {
-                    // 数字格式，直接使用
+                  } else if (!chatId.includes('-') && chatId !== 'new') {
+                    // 数字格式的 chatId，直接使用
                     conversationId = Number.parseInt(chatId);
                     msgId = Number.parseInt(message.id);
 
@@ -268,6 +256,16 @@ export function PureMessageActions({
                       toast.error('无效的对话或消息ID');
                       return;
                     }
+                  } else {
+                    // 其他情况（UUID 或 'new'），但消息没有编码信息
+                    console.error('❌ 投票失败 - 消息信息不完整:', {
+                      chatId,
+                      messageId: message.id,
+                      hasEncoding: message.id.includes(':-'),
+                      messageRole: message.role,
+                    });
+                    toast.error('消息信息不完整，请稍后重试');
+                    return;
                   }
 
                   const downvote = fetch('/api/chat/interaction', {

@@ -9,7 +9,7 @@ export async function GET(request: Request) {
   if (!chatId || !messageId) {
     return Response.json(
       { error: 'chatId and messageId are required' },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -25,11 +25,19 @@ export async function GET(request: Request) {
   }
 
   try {
+    // 如果 chatId 是特殊值 'new'，返回错误
+    if (chatId === 'new') {
+      return Response.json(
+        { error: 'Cannot get metadata for new conversations' },
+        { status: 400 },
+      );
+    }
+
     // 如果 chatId 是 UUID 格式，返回错误
     if (chatId.includes('-')) {
       return Response.json(
         { error: 'Cannot get metadata for UUID-based conversations' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -37,7 +45,7 @@ export async function GET(request: Request) {
     if (Number.isNaN(conversationId)) {
       return Response.json(
         { error: 'Invalid conversation ID' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -49,14 +57,11 @@ export async function GET(request: Request) {
 
     // 查找对应的消息
     const targetMessage = chatHistoryResponse.items.find(
-      (item) => item.msg_id.toString() === messageId
+      (item) => item.msg_id.toString() === messageId,
     );
 
     if (!targetMessage) {
-      return Response.json(
-        { error: 'Message not found' },
-        { status: 404 }
-      );
+      return Response.json({ error: 'Message not found' }, { status: 404 });
     }
 
     return Response.json({
@@ -67,7 +72,7 @@ export async function GET(request: Request) {
     console.error('Failed to get message metadata:', error);
     return Response.json(
       { error: 'Failed to get message metadata' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

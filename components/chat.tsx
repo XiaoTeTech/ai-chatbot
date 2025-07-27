@@ -15,6 +15,7 @@ import { useArtifactSelector } from '@/hooks/use-artifact';
 import { toast } from 'sonner';
 import { useSession } from 'next-auth/react';
 import { useLoginDialog } from '@/lib/context';
+import { useRouter } from 'next/navigation';
 
 export function Chat({
   id,
@@ -32,6 +33,7 @@ export function Chat({
   const { mutate } = useSWRConfig();
   const { data: session } = useSession();
   const { open } = useLoginDialog();
+  const router = useRouter();
 
   const {
     messages,
@@ -50,9 +52,25 @@ export function Chat({
     experimental_throttle: 100,
     sendExtraMessageFields: true,
     generateId: generateUUID,
-    onFinish: () => {
+    onFinish: (message) => {
       console.log('🎉 Chat finished, mutating history');
       mutate('/api/history');
+
+      // 如果当前是新对话（id === 'new'），尝试从消息ID中获取真实的conversation_id
+      if (id === 'new' && message.id.includes(':-')) {
+        const parts = message.id.split(':-');
+        if (parts.length === 2) {
+          const idParts = parts[1].split('-');
+          if (idParts.length === 2) {
+            const conversationId = idParts[0];
+            console.log(
+              '🔄 Redirecting from new chat to conversation:',
+              conversationId,
+            );
+            router.push(`/chat/${conversationId}`);
+          }
+        }
+      }
     },
     onError: (error) => {
       console.error('🚨 Chat error:', error);
@@ -68,7 +86,7 @@ export function Chat({
   });
 
   const { data: votes } = useSWR<Array<Vote>>(
-    messages.length >= 2 ? `/api/vote?chatId=${id}` : null,
+    messages.length >= 2 && id !== 'new' ? `/api/vote?chatId=${id}` : null,
     fetcher,
   );
 

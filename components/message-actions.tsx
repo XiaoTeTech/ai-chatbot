@@ -109,6 +109,10 @@ export function PureMessageActions({
                       toast.error('消息ID格式不正确');
                       return;
                     }
+                  } else if (chatId === 'new') {
+                    // 新对话，无法进行投票
+                    toast.error('请等待对话创建完成后再进行投票');
+                    return;
                   } else if (chatId.includes('-')) {
                     // 旧的 UUID 格式，需要获取元数据
                     const metadataResponse = await fetch(
@@ -237,6 +241,10 @@ export function PureMessageActions({
                       toast.error('消息ID格式不正确');
                       return;
                     }
+                  } else if (chatId === 'new') {
+                    // 新对话，无法进行投票
+                    toast.error('请等待对话创建完成后再进行投票');
+                    return;
                   } else if (chatId.includes('-')) {
                     // 旧的 UUID 格式，需要获取元数据
                     const metadataResponse = await fetch(

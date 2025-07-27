@@ -103,17 +103,91 @@ export async function POST(request: Request) {
     );
 
     console.log('✅ Got stream response from external API');
+    console.log('🔍 Stream response type:', typeof streamResponse);
+    console.log(
+      '🔍 Stream response constructor:',
+      streamResponse.constructor.name,
+    );
+    console.log('🔍 Stream response properties:', Object.keys(streamResponse));
+
+    // 先读取一些数据来检查外部API的实际格式
+    console.log('🔍 Sampling external API stream data...');
+    const reader = streamResponse.getReader();
+    const decoder = new TextDecoder();
+    let sampleData = '';
+    let sampleCount = 0;
+
+    try {
+      // 读取前几个chunks来检查格式
+      while (sampleCount < 3) {
+        const { done, value } = await reader.read();
+        if (done) {
+          console.log('🔚 Stream ended during sampling');
+          break;
+        }
+
+        const chunk = decoder.decode(value, { stream: true });
+        sampleData += chunk;
+        sampleCount++;
+
+        console.log(`📦 Sample chunk ${sampleCount}:`, chunk);
+      }
+
+      console.log('📋 Complete sample data:', sampleData);
+    } catch (error) {
+      console.error('❌ Error sampling stream:', error);
+    }
+
+    // 由于我们已经读取了部分数据，流已经被消费了
+    // 我们需要重新调用外部API来获取新的流
+    console.log('🔄 Re-calling external API for fresh stream...');
+    const freshStreamResponse = await externalChatService.chatCompletionStream(
+      session.user.lcSessionToken,
+      {
+        model: modelName,
+        messages: externalMessages,
+        stream: true,
+        conversation_id: id,
+      },
+    );
+
+    // 直接返回新的流
+    return new Response(freshStreamResponse, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        Connection: 'keep-alive',
+      },
+    });
 
     // 创建一个转换流，将外部API的流式响应转换为前端期望的格式
     const transformedStream = new ReadableStream({
       async start(controller) {
-        const reader = streamResponse.getReader();
+        console.log('🚀 Starting stream transformation...');
+
+        let reader;
+        try {
+          reader = streamResponse.getReader();
+          console.log('✅ Got stream reader');
+        } catch (error) {
+          console.error('❌ Failed to get stream reader:', error);
+          controller.error(error);
+          return;
+        }
+
         const decoder = new TextDecoder();
         let chunkCount = 0;
 
         try {
           while (true) {
+            console.log(`🔄 Reading chunk ${chunkCount + 1}...`);
             const { done, value } = await reader.read();
+
+            console.log('📊 Read result:', {
+              done,
+              valueLength: value?.length,
+            });
+
             if (done) {
               console.log('🏁 Stream finished, total chunks:', chunkCount);
               break;
@@ -121,14 +195,13 @@ export async function POST(request: Request) {
 
             chunkCount++;
             const chunk = decoder.decode(value, { stream: true });
-            console.log(
-              `📦 Chunk ${chunkCount}:`,
-              chunk.substring(0, 100) + '...',
-            );
+            console.log(`📦 Chunk ${chunkCount}:`, chunk.substring(0, 200));
 
             const lines = chunk.split('\n');
+            console.log(`📋 Lines in chunk:`, lines);
 
             for (const line of lines) {
+              console.log(`🔍 Processing line:`, line);
               if (line.startsWith('data:') && !line.includes('[DONE]')) {
                 try {
                   const jsonStr = line.substring(5).trim();
@@ -140,11 +213,8 @@ export async function POST(request: Request) {
                       const content = data.choices[0].delta.content;
                       console.log('📝 Writing content:', content);
 
-                      // 转换为前端期望的格式
-                      const transformedData = `0:"${content.replace(/"/g, '\\"')}\n`;
-                      controller.enqueue(
-                        new TextEncoder().encode(transformedData),
-                      );
+                      // 直接转发原始的流式数据，保持OpenAI兼容格式
+                      controller.enqueue(new TextEncoder().encode(line + '\n'));
                     }
                   }
                 } catch (e) {
@@ -164,7 +234,8 @@ export async function POST(request: Request) {
     return new Response(transformedStream, {
       headers: {
         'Content-Type': 'text/plain; charset=utf-8',
-        'Transfer-Encoding': 'chunked',
+        'Cache-Control': 'no-cache',
+        Connection: 'keep-alive',
       },
     });
   } catch (error) {

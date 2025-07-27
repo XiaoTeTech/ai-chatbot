@@ -352,6 +352,16 @@ export class ExternalChatService {
       top_p: request.top_p ?? 1,
     };
 
+    // 生成简洁的curl命令用于调试
+    console.log('🔧 Curl command:');
+    console.log(`curl -X POST "${url}"`);
+    console.log('Headers:');
+    Object.entries(headers).forEach(([key, value]) => {
+      console.log(`  -H "${key}: ${value}"`);
+    });
+    console.log('Body:');
+    console.log(`  -d '${JSON.stringify(requestBody)}'`);
+
     const response = await fetch(url, {
       method: 'POST',
       headers,
@@ -370,6 +380,17 @@ export class ExternalChatService {
     if (!response.body) {
       throw new ExternalApiError('No response body for stream');
     }
+
+    console.log('🔍 External API response status:', response.status);
+    console.log(
+      '🔍 External API response headers:',
+      Object.fromEntries(response.headers.entries()),
+    );
+    console.log('🔍 External API response body type:', typeof response.body);
+    console.log(
+      '🔍 External API response body constructor:',
+      response.body.constructor.name,
+    );
 
     return response.body;
   }

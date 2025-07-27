@@ -4,7 +4,7 @@ import 'server-only';
 // 基于 https://uther.xiaote.net/openapi.json 的接口规范
 
 const EXTERNAL_API_BASE_URL =
-  process.env.EXTERNAL_CHAT_API_URL || 'https://uther.xiaote.net';
+  process.env.EXTERNAL_CHAT_API_URL || 'http://127.0.0.1:3003';
 
 // 基础API响应类型
 interface ApiResponse<T = any> {

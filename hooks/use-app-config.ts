@@ -19,13 +19,16 @@ export const useAppConfig = () => {
     const fetchAppConfig = async () => {
       try {
         setLoading(true);
-        const response = await fetch('https://uther.xiaote.net/api/chat_conf/app_config', {
-          headers: {
-            'accept': 'application/json',
-            'X-LC-Session': 'rl7aqhfjva102otw0rgq0zlr8'
-          }
-        });
-        
+        const response = await fetch(
+          'http://127.0.0.1:3003/api/chat_conf/app_config',
+          {
+            headers: {
+              accept: 'application/json',
+              'X-LC-Session': 'rl7aqhfjva102otw0rgq0zlr8',
+            },
+          },
+        );
+
         if (response.ok) {
           const config = await response.json();
           setAppConfig(config);

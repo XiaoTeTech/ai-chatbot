@@ -71,12 +71,22 @@ export function PureMessageActions({
               disabled={vote?.isUpvoted}
               variant="outline"
               onClick={async () => {
-                const upvote = fetch('/api/vote', {
-                  method: 'PATCH',
+                // 检查是否为 UUID 格式的 chatId
+                if (chatId.includes('-')) {
+                  toast.error('无法在新对话中进行投票操作');
+                  return;
+                }
+
+                const interactionType = vote?.isUpvoted
+                  ? 'cancel_praise'
+                  : 'add_praise';
+
+                const upvote = fetch('/api/chat/interaction', {
+                  method: 'POST',
                   body: JSON.stringify({
-                    chatId,
-                    messageId: message.id,
-                    type: 'up',
+                    conversation_id: Number.parseInt(chatId),
+                    msg_id: Number.parseInt(message.id),
+                    interaction_type: interactionType,
                   }),
                 });
 
@@ -92,14 +102,21 @@ export function PureMessageActions({
                           (vote) => vote.messageId !== message.id,
                         );
 
-                        return [
-                          ...votesWithoutCurrent,
-                          {
-                            chatId,
-                            messageId: message.id,
-                            isUpvoted: true,
-                          },
-                        ];
+                        // 根据交互类型更新投票状态
+                        if (interactionType === 'cancel_praise') {
+                          // 取消点赞，移除投票记录
+                          return votesWithoutCurrent;
+                        } else {
+                          // 添加点赞
+                          return [
+                            ...votesWithoutCurrent,
+                            {
+                              chatId,
+                              messageId: message.id,
+                              isUpvoted: true,
+                            },
+                          ];
+                        }
                       },
                       { revalidate: false },
                     );
@@ -124,12 +141,23 @@ export function PureMessageActions({
               variant="outline"
               disabled={vote && !vote.isUpvoted}
               onClick={async () => {
-                const downvote = fetch('/api/vote', {
-                  method: 'PATCH',
+                // 检查是否为 UUID 格式的 chatId
+                if (chatId.includes('-')) {
+                  toast.error('无法在新对话中进行投票操作');
+                  return;
+                }
+
+                const interactionType =
+                  vote && !vote.isUpvoted
+                    ? 'cancel_criticism'
+                    : 'add_criticism';
+
+                const downvote = fetch('/api/chat/interaction', {
+                  method: 'POST',
                   body: JSON.stringify({
-                    chatId,
-                    messageId: message.id,
-                    type: 'down',
+                    conversation_id: Number.parseInt(chatId),
+                    msg_id: Number.parseInt(message.id),
+                    interaction_type: interactionType,
                   }),
                 });
 
@@ -145,14 +173,21 @@ export function PureMessageActions({
                           (vote) => vote.messageId !== message.id,
                         );
 
-                        return [
-                          ...votesWithoutCurrent,
-                          {
-                            chatId,
-                            messageId: message.id,
-                            isUpvoted: false,
-                          },
-                        ];
+                        // 根据交互类型更新投票状态
+                        if (interactionType === 'cancel_criticism') {
+                          // 取消踩，移除投票记录
+                          return votesWithoutCurrent;
+                        } else {
+                          // 添加踩
+                          return [
+                            ...votesWithoutCurrent,
+                            {
+                              chatId,
+                              messageId: message.id,
+                              isUpvoted: false,
+                            },
+                          ];
+                        }
                       },
                       { revalidate: false },
                     );

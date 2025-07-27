@@ -98,8 +98,6 @@ export async function POST(request: Request) {
     // 创建转换流，将外部API的SSE格式转换为AI SDK期望的格式
     console.log('🔄 Creating transformed stream for AI SDK...');
 
-    let responseConversationId: number | null = null;
-
     const transformedStream = new ReadableStream({
       async start(controller) {
         const reader = streamResponse.getReader();
@@ -124,12 +122,11 @@ export async function POST(request: Request) {
                   if (jsonStr) {
                     const data = JSON.parse(jsonStr);
 
-                    // 提取真实的 conversation_id
-                    if (data.conversation_id && !responseConversationId) {
-                      responseConversationId = data.conversation_id;
+                    // 提取真实的 conversation_id（仅用于日志）
+                    if (data.conversation_id) {
                       console.log(
                         '🆔 Real conversation ID:',
-                        responseConversationId,
+                        data.conversation_id,
                       );
                     }
 
@@ -158,19 +155,12 @@ export async function POST(request: Request) {
       },
     });
 
-    const responseHeaders: Record<string, string> = {
-      'Content-Type': 'text/plain; charset=utf-8',
-      'Cache-Control': 'no-cache',
-      Connection: 'keep-alive',
-    };
-
-    // 如果获取到了真实的 conversation_id，添加到响应头
-    if (responseConversationId) {
-      responseHeaders['X-Conversation-Id'] = String(responseConversationId);
-    }
-
     return new Response(transformedStream, {
-      headers: responseHeaders,
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Cache-Control': 'no-cache',
+        Connection: 'keep-alive',
+      },
     });
   } catch (error) {
     console.error(error);

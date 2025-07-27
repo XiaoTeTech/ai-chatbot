@@ -22,6 +22,13 @@ export async function GET(request: Request) {
   }
 
   try {
+    // 检查 chatId 是否为 UUID 格式（包含连字符）
+    if (chatId.includes('-')) {
+      // UUID 格式表示这是一个新对话，还没有真实的 conversation_id
+      // 返回空的投票数据
+      return Response.json([], { status: 200 });
+    }
+
     const conversationId = Number.parseInt(chatId);
     if (Number.isNaN(conversationId)) {
       return new Response('Invalid conversation ID', { status: 400 });
@@ -73,6 +80,15 @@ export async function PATCH(request: Request) {
   }
 
   try {
+    // 检查 chatId 是否为 UUID 格式（包含连字符）
+    if (chatId.includes('-')) {
+      // UUID 格式表示这是一个新对话，还没有真实的 conversation_id
+      // 无法进行投票操作
+      return new Response('Cannot vote on messages in new conversations', {
+        status: 400,
+      });
+    }
+
     const conversationId = Number.parseInt(chatId);
     const msgId = Number.parseInt(messageId);
 

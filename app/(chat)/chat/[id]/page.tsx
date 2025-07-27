@@ -9,6 +9,7 @@ import {
   transformDBMessagesToUIMessages,
 } from '@/lib/api/data-transformers';
 import { DataStreamHandler } from '@/components/data-stream-handler';
+import { ConversationIdHandler } from '@/components/conversation-id-handler';
 import { DEFAULT_CHAT_MODEL } from '@/lib/ai/models';
 
 export default async function Page(props: { params: Promise<{ id: string }> }) {
@@ -101,6 +102,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
           isReadonly={false}
         />
         <DataStreamHandler id={id} />
+        <ConversationIdHandler chatId={id} />
       </>
     );
   } catch (error) {

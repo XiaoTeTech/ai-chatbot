@@ -1,213 +1,13 @@
-import type { UIMessage } from 'ai';
 import { auth } from '@/app/(auth)/auth';
 import { externalChatService } from '@/lib/api/external-chat-service';
-import { getMostRecentUserMessage } from '@/lib/utils';
-import { suggestedActions } from '@/lib/suggested-actions-data';
 
-// 提取建议操作的文本内容用于匹配
-const SUGGESTED_ACTION_TEXTS = suggestedActions.map((action) => action.action);
+// 简单的内存存储
+const conversationMap = new Map<string, number>();
 
 export const maxDuration = 60;
 
 export async function POST(request: Request) {
-  console.log('🚀 POST /api/chat - Request received');
-
-  try {
-    const requestBody = await request.json();
-
-    const {
-      id,
-      messages,
-      selectedChatModel,
-    }: {
-      id: string;
-      messages: Array<UIMessage>;
-      selectedChatModel: string;
-    } = requestBody;
-
-    const session = await auth();
-
-    if (!session || !session.user || !session.user.id) {
-      return new Response('Unauthorized', { status: 401 });
-    }
-
-    // 检查是否有lcSessionToken
-    if (!session.user.lcSessionToken) {
-      return new Response('Missing LC Session Token', { status: 401 });
-    }
-
-    // 调试日志（生产环境中应该移除）
-    // console.log('LLM Chat Request - User ID:', session.user.id);
-    // console.log(
-    //   'LLM Chat Request - LC Session Token:',
-    //   session.user.lcSessionToken?.substring(0, 10) + '...',
-    // );
-
-    const userMessage = getMostRecentUserMessage(messages);
-
-    if (!userMessage) {
-      return new Response('No user message found', { status: 400 });
-    }
-
-    // 检查最新的用户消息是否匹配建议操作列表
-    console.log(userMessage.content);
-    const messageContent =
-      typeof userMessage.content === 'string' ? userMessage.content : '';
-
-    const isSuggestedAction = SUGGESTED_ACTION_TEXTS.includes(messageContent);
-
-    // 转换消息格式为外部API格式
-    const externalMessages = messages.map((msg) => ({
-      role: msg.role,
-      content: typeof msg.content === 'string' ? msg.content : '',
-    }));
-
-    // 确定使用的模型 - 根据Python示例使用gpt-3.5-turbo
-    const modelName = isSuggestedAction ? 'gpt-3.5-turbo' : 'gpt-3.5-turbo';
-
-    // 判断是否为新对话（UUID 格式表示新对话）
-    const isNewConversation = id.includes('-'); // UUID 包含连字符
-    const conversationId = isNewConversation ? null : Number.parseInt(id);
-
-    console.log('🔍 Conversation info:', {
-      id,
-      isNewConversation,
-      conversationId,
-    });
-
-    // 调用外部LLM API进行流式聊天
-    const streamResponse = await externalChatService.chatCompletionStream(
-      session.user.lcSessionToken,
-      {
-        model: modelName,
-        messages: externalMessages,
-        stream: true,
-        conversation_id: conversationId,
-        from_web: true,
-      },
-    );
-
-    console.log('✅ Got stream response from external API');
-    console.log('🔍 Stream response type:', typeof streamResponse);
-    console.log(
-      '🔍 Stream response constructor:',
-      streamResponse.constructor.name,
-    );
-    console.log('🔍 Stream response properties:', Object.keys(streamResponse));
-
-    // 创建转换流，将外部API的SSE格式转换为AI SDK期望的格式
-    console.log('🔄 Creating transformed stream for AI SDK...');
-
-    let lastConversationId: number | null = null;
-    let lastMsgId: number | null = null;
-
-    const transformedStream = new ReadableStream({
-      async start(controller) {
-        const reader = streamResponse.getReader();
-        const decoder = new TextDecoder();
-        const encoder = new TextEncoder();
-
-        try {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) {
-              console.log('🏁 Stream finished');
-              break;
-            }
-
-            const chunk = decoder.decode(value, { stream: true });
-            const lines = chunk.split('\n');
-
-            for (const line of lines) {
-              if (line.startsWith('data:') && !line.includes('[DONE]')) {
-                try {
-                  const jsonStr = line.substring(5).trim();
-                  if (jsonStr) {
-                    console.log('📥 Raw JSON from backend:', jsonStr);
-                    const data = JSON.parse(jsonStr);
-                    console.log(
-                      '📋 Parsed data structure:',
-                      JSON.stringify(data, null, 2),
-                    );
-
-                    // 提取真实的 conversation_id 和 msg_id
-                    if (data.conversation_id) {
-                      lastConversationId = data.conversation_id;
-                      lastMsgId = data.msg_id;
-                      console.log(
-                        '🆔 Real conversation ID:',
-                        data.conversation_id,
-                      );
-                      console.log('🔍 msg_id:', data.msg_id);
-                    }
-
-                    // 提取消息内容
-                    if (data.choices?.[0]?.delta?.content) {
-                      const content = data.choices[0].delta.content;
-
-                      // AI SDK期望的格式：每个内容块作为单独的数据块
-                      // 更安全的转义处理
-                      const escapedContent = content
-                        .replace(/\\/g, '\\\\') // 转义反斜杠
-                        .replace(/"/g, '\\"') // 转义双引号
-                        .replace(/\n/g, '\\n') // 转义换行符
-                        .replace(/\r/g, '\\r') // 转义回车符
-                        .replace(/\t/g, '\\t'); // 转义制表符
-
-                      const aiSdkChunk = `0:"${escapedContent}"\n`;
-                      console.log('📤 Sending to AI SDK:', aiSdkChunk);
-                      controller.enqueue(encoder.encode(aiSdkChunk));
-                    }
-                  }
-                } catch (e) {
-                  console.warn('⚠️ Failed to parse streaming data:', line, e);
-                }
-              }
-            }
-          }
-        } catch (error) {
-          console.error('💥 Stream processing error:', error);
-          controller.error(error);
-        } finally {
-          controller.close();
-        }
-      },
-    });
-
-    const responseHeaders: Record<string, string> = {
-      'Content-Type': 'text/plain; charset=utf-8',
-      'Cache-Control': 'no-cache',
-      Connection: 'keep-alive',
-    };
-
-    // 添加消息元数据到响应头
-    if (lastConversationId && lastMsgId) {
-      responseHeaders['X-Conversation-Id'] = String(lastConversationId);
-      responseHeaders['X-Message-Id'] = String(lastMsgId);
-      console.log('📤 Adding headers:', {
-        conversationId: lastConversationId,
-        msgId: lastMsgId,
-      });
-    }
-
-    return new Response(transformedStream, {
-      headers: responseHeaders,
-    });
-  } catch (error) {
-    console.error(error);
-    return new Response('处理您的请求时出现了错误！', {
-      status: 404,
-    });
-  }
-}
-
-export async function DELETE(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const id = searchParams.get('id');
-
-  if (!id) {
-    return new Response('Not Found', { status: 404 });
-  }
+  const { messages, id, selectedChatModel } = await request.json();
 
   const session = await auth();
 
@@ -216,27 +16,129 @@ export async function DELETE(request: Request) {
   }
 
   // 检查是否有lcSessionToken
-  if (!session.user.lcSessionToken) {
+  if (!(session.user as any).lcSessionToken) {
     return new Response('Missing LC Session Token', { status: 401 });
   }
 
   try {
-    const conversationId = Number.parseInt(id);
-    if (Number.isNaN(conversationId)) {
-      return new Response('Invalid conversation ID', { status: 400 });
-    }
+    console.log('🚀 Starting simple chat...');
+    console.log('🆔 Chat ID:', id);
 
-    // 调用外部API删除对话
-    await externalChatService.deleteConversation(
-      session.user.lcSessionToken,
-      conversationId,
+    // 转换消息格式
+    const apiMessages = messages.map((msg: any) => ({
+      role: msg.role,
+      content: typeof msg.content === 'string' ? msg.content : '',
+    }));
+
+    // 判断是否为新对话
+    const isNewConversation = id.includes('-');
+    const conversationId = isNewConversation ? null : Number.parseInt(id);
+
+    // 调用外部聊天API
+    const streamResponse = await externalChatService.chatCompletionStream(
+      (session.user as any).lcSessionToken,
+      {
+        messages: apiMessages,
+        model: selectedChatModel,
+        stream: true,
+        temperature: 0.5,
+        max_tokens: 4000,
+        conversation_id: conversationId,
+        from_web: true,
+      },
     );
 
-    return new Response('Chat deleted', { status: 200 });
-  } catch (error) {
-    console.error('Failed to delete conversation:', error);
-    return new Response('处理您的请求时出现了错误！', {
-      status: 500,
+    let extractedConversationId: number | null = null;
+
+    // 创建简单的流式响应
+    const stream = new ReadableStream({
+      async start(controller) {
+        const reader = streamResponse.getReader();
+        const decoder = new TextDecoder();
+        const encoder = new TextEncoder();
+
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split('\n');
+
+            for (const line of lines) {
+              if (!line.trim() || !line.startsWith('data: ')) continue;
+
+              const jsonStr = line.slice(6);
+              if (jsonStr.trim() === '[DONE]') break;
+
+              try {
+                const data = JSON.parse(jsonStr);
+                
+                // 提取 conversation_id
+                if (data.id && !extractedConversationId) {
+                  console.log('🔍 检查 ID:', data.id);
+                  
+                  // 尝试从不同格式中提取
+                  if (data.id.includes(':')) {
+                    const parts = data.id.split(':');
+                    const lastPart = parts[parts.length - 1];
+                    const cleanPart = lastPart.startsWith('-') ? lastPart.substring(1) : lastPart;
+                    const convPart = cleanPart.split('-')[0];
+                    if (!isNaN(Number(convPart))) {
+                      extractedConversationId = Number(convPart);
+                      console.log('🆔 提取到 conversation_id:', extractedConversationId);
+                      // 保存到内存
+                      conversationMap.set(id, extractedConversationId);
+                    }
+                  }
+                }
+
+                // 提取内容并直接发送
+                if (data.choices?.[0]?.delta?.content) {
+                  const content = data.choices[0].delta.content;
+                  
+                  // 直接发送文本内容
+                  controller.enqueue(encoder.encode(content));
+                }
+              } catch (e) {
+                console.warn('解析数据失败:', e);
+              }
+            }
+          }
+        } catch (error) {
+          console.error('流处理错误:', error);
+          controller.error(error);
+        } finally {
+          controller.close();
+        }
+      },
     });
+
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    return new Response('处理请求时出现错误', { status: 500 });
   }
+}
+
+// 获取 conversation_id 的 API
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const tempId = searchParams.get('tempId');
+
+  if (!tempId) {
+    return new Response('tempId is required', { status: 400 });
+  }
+
+  const conversationId = conversationMap.get(tempId);
+  
+  return Response.json({ 
+    conversationId: conversationId || null 
+  });
 }

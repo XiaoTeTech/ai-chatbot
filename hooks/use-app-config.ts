@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 
 export interface AppConfig {
   store_url: string;
@@ -11,12 +12,20 @@ export interface AppConfig {
 }
 
 export const useAppConfig = () => {
+  const { data: session } = useSession();
   const [appConfig, setAppConfig] = useState<AppConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchAppConfig = async () => {
+      // 如果没有 session 或 lcSessionToken，不发送请求
+      if (!session?.user?.lcSessionToken) {
+        setLoading(false);
+        setError('No session token available');
+        return;
+      }
+
       try {
         setLoading(true);
         const response = await fetch(
@@ -24,7 +33,7 @@ export const useAppConfig = () => {
           {
             headers: {
               accept: 'application/json',
-              'X-LC-Session': 'rl7aqhfjva102otw0rgq0zlr8',
+              'X-LC-Session': session.user.lcSessionToken,
             },
           },
         );
@@ -45,7 +54,7 @@ export const useAppConfig = () => {
     };
 
     fetchAppConfig();
-  }, []);
+  }, [session?.user?.lcSessionToken]); // 当 session token 变化时重新获取配置
 
   return { appConfig, loading, error };
 };

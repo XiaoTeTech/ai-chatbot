@@ -1,4 +1,5 @@
 import type { UIMessage } from 'ai';
+import { createDataStreamResponse } from 'ai';
 import { auth } from '@/app/(auth)/auth';
 import { externalChatService } from '@/lib/api/external-chat-service';
 import { getMostRecentUserMessage } from '@/lib/utils';
@@ -61,24 +62,24 @@ export async function POST(request: Request) {
     // 确定使用的模型 - 根据Python示例使用gpt-3.5-turbo
     const modelName = isSuggestedAction ? 'gpt-3.5-turbo' : 'gpt-3.5-turbo';
 
-    // 调用外部LLM API进行流式聊天
-    const streamResponse = await externalChatService.chatCompletionStream(
-      session.user.lcSessionToken,
-      {
-        model: modelName,
-        messages: externalMessages,
-        stream: true,
-        conversation_id: id,
-      },
-    );
-
-    // 创建转换流，将外部API的流式响应转换为前端期望的格式
-    const transformedStream = new ReadableStream({
-      async start(controller) {
-        const reader = streamResponse.getReader();
-        const decoder = new TextDecoder();
-
+    // 使用createDataStreamResponse来处理流式响应
+    return createDataStreamResponse({
+      execute: async (dataStream) => {
         try {
+          // 调用外部LLM API进行流式聊天
+          const streamResponse = await externalChatService.chatCompletionStream(
+            session.user.lcSessionToken,
+            {
+              model: modelName,
+              messages: externalMessages,
+              stream: true,
+              conversation_id: id,
+            },
+          );
+
+          const reader = streamResponse.getReader();
+          const decoder = new TextDecoder();
+
           while (true) {
             const { done, value } = await reader.read();
             if (done) break;
@@ -94,44 +95,30 @@ export async function POST(request: Request) {
                     const data = JSON.parse(jsonStr);
 
                     // 提取消息内容
-                    if (
-                      data.choices &&
-                      data.choices[0] &&
-                      data.choices[0].delta &&
-                      data.choices[0].delta.content
-                    ) {
+                    if (data.choices?.[0]?.delta?.content) {
                       const content = data.choices[0].delta.content;
 
-                      // 转换为前端期望的格式
-                      const transformedData = {
+                      // 使用dataStream写入数据
+                      dataStream.writeData({
                         type: 'text-delta',
                         content: content,
-                      };
-
-                      controller.enqueue(
-                        `data: ${JSON.stringify(transformedData)}\n\n`,
-                      );
+                      });
                     }
                   }
                 } catch (e) {
-                  // 忽略解析错误，继续处理下一行
-                  console.warn('Failed to parse streaming data:', line);
+                  console.warn('Failed to parse streaming data:', line, e);
                 }
               }
             }
           }
         } catch (error) {
           console.error('Stream processing error:', error);
-        } finally {
-          controller.close();
+          throw error;
         }
       },
-    });
-
-    return new Response(transformedStream, {
-      headers: {
-        'Content-Type': 'text/plain; charset=utf-8',
-        'Transfer-Encoding': 'chunked',
+      onError: (error) => {
+        console.error('DataStream error:', error);
+        return '抱歉，处理您的请求时出现了错误。';
       },
     });
   } catch (error) {

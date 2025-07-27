@@ -51,10 +51,22 @@ export function Chat({
     sendExtraMessageFields: true,
     generateId: generateUUID,
     onFinish: () => {
+      console.log('🎉 Chat finished, mutating history');
       mutate('/api/history');
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('🚨 Chat error:', error);
       toast.error('出问题啦，请再试一次！');
+    },
+    onRequest: (request) => {
+      console.log('📤 Sending chat request:', request);
+    },
+    onResponse: (response) => {
+      console.log(
+        '📥 Received chat response:',
+        response.status,
+        response.statusText,
+      );
     },
   });
 
@@ -95,7 +107,10 @@ export function Chat({
           isArtifactVisible={isArtifactVisible}
         />
 
-        <form className="flex mx-auto px-4 bg-background pb-4 md:pb-6 gap-2 w-full md:max-w-3xl" onSubmit={handleMessageSubmit}>
+        <form
+          className="flex mx-auto px-4 bg-background pb-4 md:pb-6 gap-2 w-full md:max-w-3xl"
+          onSubmit={handleMessageSubmit}
+        >
           {!isReadonly && (
             <MultimodalInput
               chatId={id}

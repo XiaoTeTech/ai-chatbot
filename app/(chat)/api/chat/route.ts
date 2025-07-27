@@ -1,5 +1,4 @@
 import type { UIMessage } from 'ai';
-import { createDataStreamResponse } from 'ai';
 import { auth } from '@/app/(auth)/auth';
 import { externalChatService } from '@/lib/api/external-chat-service';
 import { getMostRecentUserMessage } from '@/lib/utils';
@@ -11,7 +10,12 @@ const SUGGESTED_ACTION_TEXTS = suggestedActions.map((action) => action.action);
 export const maxDuration = 60;
 
 export async function POST(request: Request) {
+  console.log('🚀 POST /api/chat - Request received');
+
   try {
+    const requestBody = await request.json();
+    console.log('📝 Request body:', JSON.stringify(requestBody, null, 2));
+
     const {
       id,
       messages,
@@ -20,16 +24,33 @@ export async function POST(request: Request) {
       id: string;
       messages: Array<UIMessage>;
       selectedChatModel: string;
-    } = await request.json();
+    } = requestBody;
+
+    console.log(
+      '🔍 Parsed request - ID:',
+      id,
+      'Messages count:',
+      messages?.length,
+      'Model:',
+      selectedChatModel,
+    );
 
     const session = await auth();
+    console.log(
+      '👤 Session check - User ID:',
+      session?.user?.id,
+      'Has lcSessionToken:',
+      !!session?.user?.lcSessionToken,
+    );
 
     if (!session || !session.user || !session.user.id) {
+      console.log('❌ Unauthorized - No session or user');
       return new Response('Unauthorized', { status: 401 });
     }
 
     // 检查是否有lcSessionToken
     if (!session.user.lcSessionToken) {
+      console.log('❌ Missing LC Session Token');
       return new Response('Missing LC Session Token', { status: 401 });
     }
 
@@ -62,29 +83,49 @@ export async function POST(request: Request) {
     // 确定使用的模型 - 根据Python示例使用gpt-3.5-turbo
     const modelName = isSuggestedAction ? 'gpt-3.5-turbo' : 'gpt-3.5-turbo';
 
-    // 使用createDataStreamResponse来处理流式响应
-    return createDataStreamResponse({
-      execute: async (dataStream) => {
+    console.log('🎯 Starting LLM API call with model:', modelName);
+    console.log(
+      '💬 External messages:',
+      JSON.stringify(externalMessages, null, 2),
+    );
+
+    console.log('🔄 Calling external LLM API...');
+
+    // 调用外部LLM API进行流式聊天
+    const streamResponse = await externalChatService.chatCompletionStream(
+      session.user.lcSessionToken,
+      {
+        model: modelName,
+        messages: externalMessages,
+        stream: true,
+        conversation_id: id,
+      },
+    );
+
+    console.log('✅ Got stream response from external API');
+
+    // 创建一个转换流，将外部API的流式响应转换为前端期望的格式
+    const transformedStream = new ReadableStream({
+      async start(controller) {
+        const reader = streamResponse.getReader();
+        const decoder = new TextDecoder();
+        let chunkCount = 0;
+
         try {
-          // 调用外部LLM API进行流式聊天
-          const streamResponse = await externalChatService.chatCompletionStream(
-            session.user.lcSessionToken,
-            {
-              model: modelName,
-              messages: externalMessages,
-              stream: true,
-              conversation_id: id,
-            },
-          );
-
-          const reader = streamResponse.getReader();
-          const decoder = new TextDecoder();
-
           while (true) {
             const { done, value } = await reader.read();
-            if (done) break;
+            if (done) {
+              console.log('🏁 Stream finished, total chunks:', chunkCount);
+              break;
+            }
 
+            chunkCount++;
             const chunk = decoder.decode(value, { stream: true });
+            console.log(
+              `📦 Chunk ${chunkCount}:`,
+              chunk.substring(0, 100) + '...',
+            );
+
             const lines = chunk.split('\n');
 
             for (const line of lines) {
@@ -97,28 +138,33 @@ export async function POST(request: Request) {
                     // 提取消息内容
                     if (data.choices?.[0]?.delta?.content) {
                       const content = data.choices[0].delta.content;
+                      console.log('📝 Writing content:', content);
 
-                      // 使用dataStream写入数据
-                      dataStream.writeData({
-                        type: 'text-delta',
-                        content: content,
-                      });
+                      // 转换为前端期望的格式
+                      const transformedData = `0:"${content.replace(/"/g, '\\"')}\n`;
+                      controller.enqueue(
+                        new TextEncoder().encode(transformedData),
+                      );
                     }
                   }
                 } catch (e) {
-                  console.warn('Failed to parse streaming data:', line, e);
+                  console.warn('⚠️ Failed to parse streaming data:', line, e);
                 }
               }
             }
           }
         } catch (error) {
-          console.error('Stream processing error:', error);
-          throw error;
+          console.error('💥 Stream processing error:', error);
+        } finally {
+          controller.close();
         }
       },
-      onError: (error) => {
-        console.error('DataStream error:', error);
-        return '抱歉，处理您的请求时出现了错误。';
+    });
+
+    return new Response(transformedStream, {
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Transfer-Encoding': 'chunked',
       },
     });
   } catch (error) {

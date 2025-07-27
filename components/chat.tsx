@@ -103,6 +103,21 @@ function BeautifulMessages({
   const { config } = useAppConfig();
   const { data: session } = useSession();
 
+  // 默认配置，用于未登录用户
+  const defaultConfig = {
+    chat_introduction:
+      '嘿，我是小特AI！随时为你解惑，点燃生活✨与工作💼的灵感火花💡。有什么想聊的？',
+    chat_suggestions: [
+      '我们来玩一把「成语接龙」吧？',
+      '特斯拉股价今天表现如何？',
+      '最近有哪些AI技术突破？',
+      '今天的电动车新闻有哪些？',
+    ],
+  };
+
+  // 使用配置或默认配置
+  const currentConfig = config || defaultConfig;
+
   return (
     <div className="flex flex-col min-w-0 gap-6 flex-1 overflow-y-scroll pt-4">
       {messages.length === 0 && (
@@ -114,48 +129,48 @@ function BeautifulMessages({
                 晚上好，{session?.user?.name || '朋友'}！
               </h1>
               <p className="text-lg text-gray-600 dark:text-gray-400 font-normal">
-                {config?.chat_introduction ||
-                  '嘿，我是小特AI！随时为你解惑，点燃生活✨与工作💼的灵感火花💡。有什么想聊的？'}
+                {currentConfig.chat_introduction}
               </p>
             </div>
 
             {/* 建议卡片 */}
-            {config?.chat_suggestions && config.chat_suggestions.length > 0 && (
-              <div className="w-full max-w-2xl">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {config.chat_suggestions.map((suggestion, index) => (
-                    <button
-                      key={index}
-                      type="button"
-                      onClick={() => onSuggestionClick(suggestion)}
-                      className="group relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 text-left hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                    >
-                      <div className="flex flex-col">
-                        <h3 className="font-medium text-gray-900 dark:text-gray-100 text-base leading-6">
-                          {/* 直接显示完整的建议内容 */}
-                          {suggestion}
-                        </h3>
-                      </div>
-                      <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <svg
-                          className="w-4 h-4 text-gray-400"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9 5l7 7-7 7"
-                          />
-                        </svg>
-                      </div>
-                    </button>
-                  ))}
+            {currentConfig.chat_suggestions &&
+              currentConfig.chat_suggestions.length > 0 && (
+                <div className="w-full max-w-2xl">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {currentConfig.chat_suggestions.map((suggestion, index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => onSuggestionClick(suggestion)}
+                        className="group relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 text-left hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                      >
+                        <div className="flex flex-col">
+                          <h3 className="font-medium text-gray-900 dark:text-gray-100 text-base leading-6">
+                            {/* 直接显示完整的建议内容 */}
+                            {suggestion}
+                          </h3>
+                        </div>
+                        <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <svg
+                            className="w-4 h-4 text-gray-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 5l7 7-7 7"
+                            />
+                          </svg>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
           </div>
         </div>
       )}

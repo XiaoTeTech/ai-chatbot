@@ -1,4 +1,4 @@
-import { auth } from '@/app/(auth)/auth';
+import { auth, type ExtendedUser } from '@/app/(auth)/auth';
 import { externalChatService } from '@/lib/api/external-chat-service';
 
 export async function POST(request: Request) {
@@ -9,7 +9,7 @@ export async function POST(request: Request) {
   }
 
   // 检查是否有lcSessionToken
-  if (!session.user.lcSessionToken) {
+  if (!(session.user as ExtendedUser).lcSessionToken) {
     return Response.json('Missing LC Session Token', { status: 401 });
   }
 
@@ -20,17 +20,29 @@ export async function POST(request: Request) {
     // 验证必需参数
     if (!conversation_id || !msg_id || !interaction_type) {
       return Response.json(
-        { error: 'Missing required parameters: conversation_id, msg_id, interaction_type' },
-        { status: 400 }
+        {
+          error:
+            'Missing required parameters: conversation_id, msg_id, interaction_type',
+        },
+        { status: 400 },
       );
     }
 
     // 验证交互类型
-    const validInteractionTypes = ['add_praise', 'cancel_praise', 'add_criticism', 'cancel_criticism'];
+    const validInteractionTypes = [
+      'add_praise',
+      'cancel_praise',
+      'add_criticism',
+      'cancel_criticism',
+    ];
     if (!validInteractionTypes.includes(interaction_type)) {
       return Response.json(
-        { error: 'Invalid interaction_type. Must be one of: ' + validInteractionTypes.join(', ') },
-        { status: 400 }
+        {
+          error:
+            'Invalid interaction_type. Must be one of: ' +
+            validInteractionTypes.join(', '),
+        },
+        { status: 400 },
       );
     }
 
@@ -41,7 +53,7 @@ export async function POST(request: Request) {
         conversation_id: Number(conversation_id),
         msg_id: Number(msg_id),
         interaction_type,
-      }
+      },
     );
 
     return Response.json(result, { status: 200 });
@@ -49,7 +61,7 @@ export async function POST(request: Request) {
     console.error('Failed to interact with message:', error);
     return Response.json(
       { error: 'Failed to interact with message' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

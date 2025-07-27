@@ -422,18 +422,116 @@ export function Chat({
     }
   };
 
-  // 处理建议点击
+  // 处理建议点击 - 直接发送消息
   const handleSuggestionClick = async (suggestion: string) => {
-    setInput(suggestion);
-    // 模拟表单提交事件
-    const fakeEvent = {
-      preventDefault: () => {},
-    } as React.FormEvent;
+    if (!session?.user) {
+      openLoginDialog();
+      return;
+    }
 
-    // 先设置输入值，然后提交
-    setTimeout(() => {
-      handleSubmit(fakeEvent);
-    }, 100);
+    if (isLoading) {
+      toast.error('请等待模型完成回复！');
+      return;
+    }
+
+    const userMessage: SimpleUIMessage = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: suggestion.trim(),
+      createdAt: new Date(),
+    };
+
+    const assistantMessage: SimpleUIMessage = {
+      id: (Date.now() + 1).toString(),
+      role: 'assistant',
+      content: '',
+      createdAt: new Date(),
+    };
+
+    setMessages((prev) => [...prev, userMessage, assistantMessage]);
+    setIsLoading(true);
+
+    // 创建新的 AbortController
+    abortControllerRef.current = new AbortController();
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: [...messages, userMessage],
+          id,
+          selectedChatModel,
+        }),
+        signal: abortControllerRef.current.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      if (!response.body) {
+        throw new Error('No response body');
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+
+        // 更新助手消息内容 - 添加打字效果
+        setMessages((prev) => {
+          const newMessages = [...prev];
+          const lastMessage = newMessages[newMessages.length - 1];
+          if (lastMessage.role === 'assistant') {
+            lastMessage.content += chunk;
+          }
+          return newMessages;
+        });
+
+        // 添加小延迟以产生打字效果
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      }
+
+      // 检查是否需要跳转到新的 conversation_id
+      if (id === 'new' || id.includes('-')) {
+        // 尝试获取真实的 conversation_id
+        try {
+          const convResponse = await fetch(`/api/chat?tempId=${id}`);
+          const convData = await convResponse.json();
+
+          if (convData.conversationId) {
+            console.log('🔄 跳转到真实对话:', convData.conversationId);
+            router.replace(`/chat/${convData.conversationId}`);
+          }
+        } catch (error) {
+          console.warn('获取 conversation_id 失败:', error);
+        }
+      }
+
+      // 刷新历史记录
+      mutate('/api/history');
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.log('请求被取消');
+        return;
+      }
+
+      console.error('聊天错误:', error);
+      toast.error('出问题啦，请再试一次！');
+
+      // 移除失败的消息
+      setMessages((prev) => prev.slice(0, -2));
+    } finally {
+      setIsLoading(false);
+      abortControllerRef.current = null;
+    }
   };
 
   // 处理点赞/踩

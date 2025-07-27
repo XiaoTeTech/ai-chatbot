@@ -130,33 +130,11 @@ function BeautifulMessages({
                       onClick={() => onSuggestionClick(suggestion)}
                       className="group relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 text-left hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                     >
-                      <div className="flex flex-col gap-2">
+                      <div className="flex flex-col">
                         <h3 className="font-medium text-gray-900 dark:text-gray-100 text-base leading-6">
-                          {/* 提取主题作为标题 */}
-                          {suggestion.includes('成语接龙')
-                            ? '成语接龙'
-                            : suggestion.includes('特斯拉股价')
-                              ? '特斯拉股价'
-                              : suggestion.includes('AI技术')
-                                ? 'AI技术突破'
-                                : suggestion.includes('电动车')
-                                  ? '电动车新闻'
-                                  : suggestion.split('？')[0] ||
-                                    suggestion.split('?')[0] ||
-                                    suggestion}
+                          {/* 直接显示完整的建议内容 */}
+                          {suggestion}
                         </h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 leading-5">
-                          {/* 根据内容生成描述 */}
-                          {suggestion.includes('成语接龙')
-                            ? '文字游戏，寓教于乐'
-                            : suggestion.includes('特斯拉股价')
-                              ? '实时股价和市场分析'
-                              : suggestion.includes('AI技术')
-                                ? '最新科技动态和趋势'
-                                : suggestion.includes('电动车')
-                                  ? '行业资讯和发展动态'
-                                  : '点击开始对话'}
-                        </p>
                       </div>
                       <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
                         <svg

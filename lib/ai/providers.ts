@@ -24,7 +24,7 @@ const createMyProvider = async (token: string) => {
   console.log('clientIp', clientIp);
 
   return createOpenAICompatible({
-    baseURL: 'http://127.0.0.1:3003/v1',
+    baseURL: 'https://uther.xiaote.net/v1',
     name: 'tesla',
     apiKey: token,
     headers: {

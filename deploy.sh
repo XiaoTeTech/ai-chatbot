@@ -40,7 +40,12 @@ ssh "$SERVER" "cd ~/ai-chatbot && \
     docker-compose up -d && \
     rm ${IMAGE_NAME}.tar"
 
-# 5. 清理本地临时文件
+# 5. 运行数据库迁移
+echo "🗄️  运行数据库迁移..."
+ssh "$SERVER" "cd ~/ai-chatbot && \
+    docker-compose exec -T ai-chatbot pnpm tsx lib/db/migrate"
+
+# 6. 清理本地临时文件
 echo "🧹 清理本地临时文件..."
 rm ${IMAGE_NAME}.tar
 
